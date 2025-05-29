@@ -1,6 +1,6 @@
 {{ define "content" }}
 <h2>Вход</h2>
-<form action="/login" method="post">
+<form id="loginForm">
     <label for="email">Email:</label><br>
     <input type="email" id="email" name="email"><br><br>
     <label for="password">Пароль:</label><br>
@@ -9,5 +9,31 @@
 </form>
 <p>Нет аккаунта? <a href="/register">Зарегистрироваться</a></p>
 
+<script>
+document.getElementById("loginForm").addEventListener("submit", async function(e) {
+    e.preventDefault(); // отменяем обычную отправку формы
+
+    const email = document.getElementById("email").value;
+    const password = document.getElementById("password").value;
+
+    const response = await fetch("/login", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify({ email: email, password: password })
+    });
+
+    const result = await response.json();
+
+    if (response.ok) {
+        alert(result.success || "Успешный вход");
+        // window.location.href = "/"; // редирект при необходимости
+    } else {
+        alert(result.error || "Ошибка входа");
+    }
+});
+</script>
+
 {{ end }}
-{{template "base.html"}}
+{{ template "base.html" }}
