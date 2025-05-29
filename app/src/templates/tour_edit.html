@@ -1,0 +1,19 @@
+{{ define "content" }}
+<h2>Редактировать тур</h2>
+
+<form action="/tours/edit/{{ .Tour.ID }}" method="POST">
+    <label for="name">Название:</label><br>
+    <input type="text" id="name" name="name" value="{{ .Tour.Name }}" required><br><br>
+
+    <label for="description">Описание:</label><br>
+    <textarea id="description" name="description" rows="4" cols="50" required>{{ .Tour.Description }}</textarea><br><br>
+
+    <label for="price">Цена (₽):</label><br>
+    <input type="number" id="price" name="price" step="0.01" value="{{ printf "%.2f" .Tour.Price }}" required><br><br>
+
+    <button type="submit">Сохранить изменения</button>
+    <a href="/tours"><button type="button">Отмена</button></a>
+</form>
+{{ end }}
+
+{{ template "base.html" }}

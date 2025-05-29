@@ -1,0 +1,27 @@
+{{define "content"}}
+<h2>Регистрация</h2>
+<form action="/register" method="post">
+    <label for="email">Email:</label><br>
+    <input type="email" id="email" name="email" required><br><br>
+
+    <label for="password">Пароль:</label><br>
+    <input type="password" id="password" name="password" required><br><br>
+
+    <label for="firstName">Имя:</label><br>
+    <input type="text" id="firstName" name="firstName" required><br><br>
+
+    <label for="lastName">Фамилия:</label><br>
+    <input type="text" id="lastName" name="lastName" required><br><br>
+
+    <label for="position">Должность:</label><br>
+    <select id="position" name="position">
+        {{ range .Positions }}
+            <option value="{{ .ID }}">{{ .Name }}</option>
+        {{ end }}
+    </select><br><br>
+
+    <input type="submit" value="Зарегистрироваться">
+</form>
+<p>Уже есть аккаунт? <a href="/login">Войти</a></p>
+{{ end }}
+{{template "base.html"}}
