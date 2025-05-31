@@ -16,6 +16,19 @@ func NewAuthController(service *services.AuthService) *AuthController {
 	return &AuthController{service}
 }
 
+// LoginPage отображает страницу логина
+func (ac *AuthController) LoginPage(c *gin.Context) {
+	positions, err := ac.service.GetPositions()
+	if err != nil {
+		c.Set("Error", err)
+		return
+	}
+	c.HTML(http.StatusOK, "auth/login", gin.H{
+		"Title":     "Вход",
+		"Positions": positions,
+	})
+}
+
 func (ac *AuthController) Login(c *gin.Context) {
 	var userReq models.EmployeeRequest
 	if err := c.ShouldBindJSON(&userReq); err != nil {
@@ -33,6 +46,18 @@ func (ac *AuthController) Login(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"success": "User logged in"})
 }
 
+// CreateEmployeePage отображает страницу создания нового сотрудника
+func (ac *AuthController) CreateEmployeePage(c *gin.Context) {
+	positions, err := ac.service.GetPositions()
+	if err != nil {
+		c.Set("Error", err)
+		return
+	}
+	c.HTML(http.StatusOK, "auth/create_new_empl", gin.H{
+		"Title":     "Создание нового сотрудника",
+		"Positions": positions,
+	})
+}
 func (ac *AuthController) CreateNewEmployee(c *gin.Context) {
 	var user models.Employee
 	if err := c.ShouldBindJSON(&user); err != nil {
@@ -50,5 +75,10 @@ func (ac *AuthController) CreateNewEmployee(c *gin.Context) {
 
 func (ac *AuthController) Logout(c *gin.Context) {
 	c.SetCookie("token", "", -1, "/", "localhost", false, true)
+
+	if c.GetHeader("Accept") != "application/json" {
+		c.Redirect(http.StatusSeeOther, "/login")
+		return
+	}
 	c.JSON(http.StatusOK, gin.H{"success": "User logged out"})
 }

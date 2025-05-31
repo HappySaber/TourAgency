@@ -7,39 +7,26 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/gin-contrib/multitemplate"
 	"github.com/gin-gonic/gin"
+	"gorm.io/gorm"
 )
 
-func TourAgencyRoutes(r *gin.Engine, authController *controllers.AuthController) {
-	// Создаем экземпляр рендерера
-	render := multitemplate.NewRenderer()
+func TourAgencyRoutes(r *gin.Engine, db *gorm.DB) {
 
-	// Путь к директории с шаблонами
-	templatesDir := "src/templates"
+	authService := services.NewAuthService(db)
+	authController := controllers.NewAuthController(authService)
 
-	// Обход всех файлов в директории
-	err := filepath.Walk(templatesDir, func(path string, info os.FileInfo, err error) error {
-		if err != nil {
-			return err
-		}
-		// Проверяем, что это файл и он имеет расширение .html
-		if !info.IsDir() && filepath.Ext(path) == ".html" {
-			// Извлекаем имя файла без расширения
-			name := info.Name()[:len(info.Name())-len(filepath.Ext(info.Name()))]
-			// Добавляем шаблон
-			render.AddFromFiles(name, "src/templates/base.html", path)
-		}
-		return nil
-	})
+	tourService := services.NewTourService(db)
+	tourController := controllers.NewTourController(tourService)
 
-	if err != nil {
-		log.Fatalf("Ошибка при обходе директории: %v", err)
-	}
+	providerService := services.NewProviderService(db)
+	providerController := controllers.NewProviderController(providerService)
 
 	// Устанавливаем кастомный рендерер
-	r.HTMLRender = render
+	r.HTMLRender = renderTemplates()
 
 	// Подключение статики
 	r.Static("/src/static", "./static")
@@ -51,45 +38,46 @@ func TourAgencyRoutes(r *gin.Engine, authController *controllers.AuthController)
 		})
 	})
 
-	// Страница логина
-	r.GET("/login", func(c *gin.Context) {
-		service := &services.AuthService{}
-		positions, err := service.GetPositions()
+	initAuthRoutes(r, authController, db)
+	initTourRoutes(r, tourController, db)
+	initProviderRoutes(r, providerController, db)
+
+}
+
+func renderTemplates() multitemplate.Renderer {
+	render := multitemplate.NewRenderer()
+
+	templatesDir := "src/templates"
+	baseLayout := filepath.Join(templatesDir, "base.html")
+
+	err := filepath.Walk(templatesDir, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
-			c.HTML(http.StatusInternalServerError, "error", gin.H{
-				"Message": "Ошибка при получении должностей",
-			})
-			return
+			return err
 		}
-		c.HTML(http.StatusOK, "login", gin.H{
-			"Title":     "Вход",
-			"Positions": positions,
-		})
+
+		// Пропускаем директории и base.html
+		if info.IsDir() || filepath.Base(path) == "base.html" {
+			return nil
+		}
+
+		if filepath.Ext(path) == ".html" {
+			// Уникальное имя шаблона по относительному пути (например, "providers/list")
+			relativePath, err := filepath.Rel(templatesDir, path)
+			if err != nil {
+				return err
+			}
+
+			// Убираем .html и заменяем \ на /
+			name := strings.TrimSuffix(relativePath, filepath.Ext(relativePath))
+			name = filepath.ToSlash(name)
+
+			render.AddFromFiles(name, baseLayout, path)
+		}
+		return nil
 	})
 
-	// Обработчик для входа
-	r.POST("/login", authController.Login)
-
-	r.GET("/create_new_empl", func(c *gin.Context) {
-		c.HTML(http.StatusOK, "create_new_empl", gin.H{"Title": "Создание нового работника"})
-	})
-
-	r.POST("/create_new_empl", authController.CreateNewEmployee)
-
-	r.POST("/logout", authController.Logout)
-
-	r.GET("/tours", func(c *gin.Context) {
-		c.HTML(http.StatusOK, "tours", gin.H{"Title": "Создание нового работника"})
-	})
-
-	r.GET("/tours/edit", func(c *gin.Context) {
-		c.HTML(http.StatusOK, "tour_edit", gin.H{"Title": "Создание нового работника"})
-	})
-
-	r.GET("/tours/new", func(c *gin.Context) {
-		c.HTML(http.StatusOK, "tour_new", gin.H{
-			"Title": "Создание нового тура",
-		})
-	})
-
+	if err != nil {
+		log.Fatalf("Ошибка при загрузке шаблонов: %v", err)
+	}
+	return render
 }

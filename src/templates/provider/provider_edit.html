@@ -1,0 +1,55 @@
+{{ define "content" }}
+<h2>Редактировать провайдера</h2>
+
+<form id="editProviderForm">
+    <input type="hidden" id="id" value="{{ .Provider.ID }}">
+
+    <label>Название:</label><br>
+    <input type="text" id="name" value="{{ .Provider.Name }}"><br><br>
+
+    <label>Адрес назначения:</label><br>
+    <input type="text" id="addressto" value="{{ .Provider.Addressto }}"><br><br>
+
+    <label>Адрес:</label><br>
+    <input type="text" id="address" value="{{ .Provider.Address }}"><br><br>
+
+    <label>Email:</label><br>
+    <input type="email" id="email" value="{{ .Provider.Email }}"><br><br>
+
+    <label>Телефон:</label><br>
+    <input type="text" id="phonenumber" value="{{ .Provider.PhoneNumber }}"><br><br>
+
+    <input type="submit" value="Сохранить изменения">
+</form>
+
+<script>
+document.getElementById("editProviderForm").addEventListener("submit", async function(e) {
+    e.preventDefault();
+
+    const id = document.getElementById("id").value;
+
+    const provider = {
+        name: document.getElementById("name").value,
+        addressto: document.getElementById("addressto").value,
+        address: document.getElementById("address").value,
+        email: document.getElementById("email").value,
+        phonenumber: document.getElementById("phonenumber").value
+    };
+
+    const res = await fetch(`/providers/edit/${id}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(provider)
+    });
+
+    if (res.ok) {
+        alert("Обновлено");
+        window.location.href = "/providers";
+    } else {
+        const data = await res.json();
+        alert(data.error || "Ошибка");
+    }
+});
+</script>
+{{ end }}
+{{ template "base.html" }}

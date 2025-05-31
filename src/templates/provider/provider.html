@@ -1,0 +1,51 @@
+{{ define "content" }}
+<h2>Список провайдеров</h2>
+
+<table border="1" cellpadding="5" cellspacing="0">
+    <thead>
+        <tr>
+            <th>Название</th>
+            <th>Адрес назначения</th>
+            <th>Адрес</th>
+            <th>Email</th>
+            <th>Телефон</th>
+            <th>Действия</th>
+        </tr>
+    </thead>
+    <tbody>
+        {{ range .Providers }}
+        <tr>
+            <td>{{ .Name }}</td>
+            <td>{{ .Addressto }}</td>
+            <td>{{ .Address }}</td>
+            <td>{{ .Email }}</td>
+            <td>{{ .PhoneNumber }}</td>
+            <td>
+                <a href="/providers/edit/{{ .ID }}">✏️ Редактировать</a>
+                <button onclick="deleteProvider('{{ .ID }}')">🗑️ Удалить</button>
+            </td>
+        </tr>
+        {{ end }}
+    </tbody>
+</table>
+
+<br>
+<a href="/providers/new">➕ Добавить провайдера</a>
+
+<script>
+async function deleteProvider(id) {
+    if (!confirm("Удалить провайдера?")) return;
+
+    const res = await fetch(`/providers/delete/${id}`, { method: "POST" });
+
+    if (res.ok) {
+        alert("Удалено");
+        location.reload();
+    } else {
+        const data = await res.json();
+        alert(data.error || "Ошибка");
+    }
+}
+</script>
+{{ end }}
+{{ template "base.html" }}

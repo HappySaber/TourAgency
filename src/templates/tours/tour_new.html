@@ -1,0 +1,68 @@
+{{ define "content" }}
+<h2>Добавить тур</h2>
+
+<form action="/tours" method="POST">
+    <label>Название:</label><br>
+    <input type="text" name="name" required><br><br>
+
+    <label>Рейтинг:</label><br>
+    <input type="text" name="rating"><br><br>
+
+    <label>Отель:</label><br>
+    <input type="text" name="hotel"><br><br>
+
+    <label>Питание:</label><br>
+    <input type="text" name="nutrition"><br><br>
+
+    <label>Город:</label><br>
+    <input type="text" name="city"><br><br>
+
+    <label>Страна:</label><br>
+    <input type="text" name="country"><br><br>
+
+    <label>Провайдер:</label><br>
+    <select name="provider" required>
+        <option value="">-- Выберите провайдера --</option>
+        {{ range .Providers }}
+        <option value="{{ .ID }}">{{ .Name }}</option>
+        {{ end }}
+    </select><br><br>
+
+    <button type="submit">Создать</button>
+</form>
+
+
+<script>
+    document.getElementById("editTourForm").addEventListener("submit", async function(e) {
+        e.preventDefault();
+    
+        const id = document.getElementById("id").value;
+    
+        const provider = {
+            name: document.getElementById("name").value,
+            rating: document.getElementById("rating").value,
+            hotel: document.getElementById("hotel").value,
+            nutrition: document.getElementById("nutrition").value,
+            city: document.getElementById("city").value,
+            country: document.getElementById("country").value,
+            provider: document.getElementById("provider").value
+        };
+    
+        const res = await fetch(`/providers/edit/${id}`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(provider)
+        });
+    
+        if (res.ok) {
+            alert("Обновлено");
+            window.location.href = "/tours";
+        } else {
+            const data = await res.json();
+            alert(data.error || "Ошибка");
+        }
+    });
+    </script>
+{{ end }}
+
+{{ template "base.html" }}

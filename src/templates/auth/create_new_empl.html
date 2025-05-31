@@ -1,0 +1,86 @@
+{{define "content"}}
+<h2>Регистрация</h2>
+<form id="registerForm">
+    <label for="email">Email:</label><br>
+    <input type="email" id="email" name="email" required><br><br>
+
+    <label for="password">Пароль:</label><br>
+    <input type="password" id="password" name="password" required><br><br>
+
+    <label for="firstName">Имя:</label><br>
+    <input type="text" id="firstName" name="firstName" required><br><br>
+
+    <label for="lastName">Фамилия:</label><br>
+    <input type="text" id="lastName" name="lastName" required><br><br>
+
+    <label for="middleName">Отчество:</label><br>
+    <input type="text" id="middleName" name="middleName"><br><br>
+
+    <label for="address">Адрес:</label><br>
+    <input type="text" id="address" name="address" required><br><br>
+
+    <label for="phoneNumber">Телефон:</label><br>
+    <input type="text" id="phoneNumber" name="phoneNumber"><br><br>
+
+    <label for="dateOfBirth">Дата рождения:</label><br>
+    <input type="date" id="dateOfBirth" name="dateOfBirth"><br><br>
+
+    <label for="dateOfHiring">Дата приёма на работу:</label><br>
+    <input type="date" id="dateOfHiring" name="dateOfHiring"><br><br>
+
+    <label for="position">Должность:</label><br>
+    <select id="position" name="position">
+        {{ range .Positions }}
+            <option value="{{ .ID }}">{{ .Name }}</option>
+        {{ end }}
+    </select><br><br>
+
+    <input type="submit" value="Зарегистрироваться">
+</form>
+
+<p>Уже есть аккаунт? <a href="/login">Войти</a></p>
+
+<script>
+document.getElementById("registerForm").addEventListener("submit", async function(e) {
+    e.preventDefault();
+
+    const formatToTimestamp = (dateStr) => {
+    return dateStr ? `${dateStr}T00:00:00Z` : null;
+};
+
+const data = {
+    email: document.getElementById("email").value,
+    password: document.getElementById("password").value,
+    firstName: document.getElementById("firstName").value,
+    lastName: document.getElementById("lastName").value,
+    middleName: document.getElementById("middleName").value,
+    address: document.getElementById("address").value,
+    phoneNumber: document.getElementById("phoneNumber").value,
+    dateOfBirth: formatToTimestamp(document.getElementById("dateOfBirth").value),
+    dateOfHiring: formatToTimestamp(document.getElementById("dateOfHiring").value),
+    position: document.getElementById("position").value
+};
+
+
+    const response = await fetch("/create_new_empl", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify(data)
+    });
+
+
+    const result = await response.json();
+
+    if (response.ok) {
+        alert(result.success || "Регистрация прошла успешно");
+        window.location.href = "/"; // редирект при необходимости
+    } else {
+        alert(result.error || "Ошибка регистрации");
+    }
+});
+</script>
+{{end}}
+
+{{template "base.html"}}

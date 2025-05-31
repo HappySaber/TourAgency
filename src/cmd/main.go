@@ -1,19 +1,20 @@
 package main
 
 import (
-	"TurAgency/src/controllers"
 	"TurAgency/src/database"
 	"TurAgency/src/routes"
-	"TurAgency/src/services"
+	"fmt"
 	"log"
+	"os"
 
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
 )
 
 func main() {
+	fmt.Println(os.Getwd())
 	// Загружаем переменные окружения из файла .env
-	err := godotenv.Load("../.env")
+	err := godotenv.Load(".env")
 	if err != nil {
 		log.Fatalf("Error while loading .env file: %v", err)
 	}
@@ -21,12 +22,8 @@ func main() {
 	// Создаем экземпляр DBConfig
 	db := database.Init()
 
-	// DI
-	authService := services.NewAuthService(db)
-	authController := controllers.NewAuthController(authService)
-
 	port := "8080"
 	router := gin.New()
-	routes.TourAgencyRoutes(router, authController)
+	routes.TourAgencyRoutes(router, db)
 	router.Run(":" + port)
 }

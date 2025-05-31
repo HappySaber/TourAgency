@@ -31,7 +31,7 @@ func IsAuthorized() gin.HandlerFunc {
 func IsAdmin() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		role, exists := c.Get("role")
-		if !exists || role != "admin" {
+		if !exists || role != "Администратор" {
 			c.JSON(403, gin.H{"error": "Access denied, only admin can do this"})
 			c.Abort()
 			return
