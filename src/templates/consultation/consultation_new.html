@@ -1,0 +1,70 @@
+{{ define "content" }}
+<h2>Добавление консультации</h2>
+<form id="consultationForm" method="POST">
+    <input type="hidden" name="_csrf" value="{{ .CSRFToken }}">
+    
+    <label>Дата консультации:</label><br>
+    <input type="date" name="dateofconsultation" required><br><br>
+    
+    <label>Время консультации:</label><br>
+    <input type="time" name="timeofconsultation" required><br><br>
+    
+    <label>Клиент:</label><br>
+    <select name="client" required>
+        <option value="">-- Выберите клиента --</option>
+        {{ range .Clients }}
+        <option value="{{ .ID }}">{{ .Firstname }} {{ .Lastname }}</option>
+        {{ else }}
+        <option value="" disabled>Нет доступных клиентов</option>
+        {{ end }}
+    </select><br><br>
+
+    <label>Сотрудник:</label><br>
+    <select name="employee" required>
+        <option value="">-- Выберите сотрудника --</option>
+        {{ range .Employees }}
+        <option value="{{ .ID }}">{{ .FirstName }} {{ .LastName }}</option>
+        {{ else }}
+        <option value="" disabled>Нет доступных сотрудников</option>
+        {{ end }}
+    </select><br><br>
+
+    <button type="submit" class="btn btn-primary">Сохранить</button>
+</form>
+
+<script>
+document.getElementById("consultationForm").addEventListener("submit", async function(e) {
+    e.preventDefault();
+    const form = e.target;
+    const formData = {
+        dateofconsultation: form.dateofconsultation.value,
+        timeofconsultation: form.timeofconsultation.value,
+        client: form.client.value,
+        employee: form.employee.value,
+        _csrf: form._csrf.value
+    };
+    
+    try {
+        const res = await fetch("/consultation/new", {
+            method: "POST",
+            headers: { 
+                "Content-Type": "application/json",
+                "X-CSRF-Token": formData._csrf
+            },
+            body: JSON.stringify(formData)
+        });
+        
+        if (res.ok) {
+            alert("Консультация создана");
+            window.location.href = "/consultation";
+        } else {
+            const data = await res.json();
+            alert(data.error || "Ошибка при создании");
+        }
+    } catch (err) {
+        alert("Ошибка: " + err.message);
+    }
+});
+</script>
+{{ end }}
+{{ template "base.html" . }}

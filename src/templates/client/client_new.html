@@ -1,0 +1,74 @@
+{{ define "content" }}
+<h2>Добавление клиента</h2>
+
+<form id="createClientForm">
+    <label>Имя:</label><br>
+    <input type="text" id="firstname" name="firstname" required><br><br>
+
+    <label>Фамилия:</label><br>
+    <input type="text" id="lastname" name="lastname" required><br><br>
+
+    <label>Отчество:</label><br>
+    <input type="text" id="middlename" name="middlename"><br><br>
+
+    <label>Адрес:</label><br>
+    <input type="text" id="address" name="address" required><br><br>
+
+    <label>Телефон:</label><br>
+    <!-- Добавьте валидацию для телефона -->
+<input type="tel" id="phonenumber" name="phonenumber" 
+       pattern="[0-9]{10}" maxlength="10" required
+       title="10 цифр номера без пробелов и спецсимволов"><br><br>
+
+    <label>Дата рождения:</label><br>
+    <input type="date" id="dateofbirth" name="dateofbirth" required><br><br>
+
+    <input type="submit" value="Сохранить">
+</form>
+
+<script>
+document.getElementById("createClientForm").addEventListener("submit", async function(e) {
+    e.preventDefault();
+
+    try {
+        const client = {
+            firstname: document.getElementById("firstname").value,
+            lastname: document.getElementById("lastname").value,
+            middlename: document.getElementById("middlename").value,
+            address: document.getElementById("address").value,
+            phonenumber: document.getElementById("phonenumber").value,
+            dateofbirth: new Date(document.getElementById("dateofbirth").value).toISOString()
+        };
+
+        const res = await fetch("/client/new", {
+            method: "POST",
+            headers: { 
+                "Content-Type": "application/json",
+                "Accept": "application/json"
+            },
+            body: JSON.stringify(client)
+        });
+
+        // Проверяем статус ответа
+        if (!res.ok) {
+            // Пытаемся получить JSON ошибки
+            try {
+                const errorData = await res.json();
+                throw new Error(errorData.error || errorData.message || `HTTP error! status: ${res.status}`);
+            } catch {
+                throw new Error(`HTTP error! status: ${res.status}`);
+            }
+        }
+
+        const data = await res.json();
+        
+        alert(data.message || "Клиент успешно создан");
+        window.location.href = "/client"; // Здесь добавлен редирект на /client
+    } catch (err) {
+        console.error("Ошибка при создании клиента:", err);
+        alert("Ошибка: " + err.message);
+    }
+});
+</script>
+{{ end }}
+{{ template "base.html" . }}

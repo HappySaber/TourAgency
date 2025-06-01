@@ -2,24 +2,19 @@ package routes
 
 import (
 	"TurAgency/src/controllers"
-	"net/http"
 
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
 )
 
-func initConsultrRoutes(r *gin.Engine, consultCntr *controllers.ConsultationController, db *gorm.DB) {
-	r.GET("/consultation", func(c *gin.Context) {
-		c.HTML(http.StatusOK, "provider/provider", gin.H{"Title": "Создание нового работника"})
-	})
-
-	r.GET("/provider/edit/:id", func(c *gin.Context) {
-		c.HTML(http.StatusOK, "provider/provider_edit", gin.H{"Title": "Создание нового работника"})
-	})
-
-	r.GET("/provider/new", func(c *gin.Context) {
-		c.HTML(http.StatusOK, "provider/provider_new", gin.H{
-			"Title": "Создание нового тура",
-		})
-	})
+func initConsultationRoutes(r *gin.Engine, consultationCtrl *controllers.ConsultationController, db *gorm.DB) {
+	providers := r.Group("/consultation")
+	{
+		providers.GET("/", consultationCtrl.List)
+		providers.GET("/new", consultationCtrl.New)
+		providers.POST("/new", consultationCtrl.Create)
+		providers.GET("/edit/:id", consultationCtrl.Edit)
+		providers.PUT("/edit/:id", consultationCtrl.Update)
+		providers.DELETE("/:id", consultationCtrl.Delete)
+	}
 }

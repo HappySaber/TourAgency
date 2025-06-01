@@ -43,3 +43,19 @@ func (cs *ConsultationService) Update(updated *models.Consultation) error {
 func (cs *ConsultationService) Delete(id string) error {
 	return cs.db.Delete(&models.Consultation{}, "id = ?", id).Error
 }
+
+func (cs *ConsultationService) GetAllClients() ([]models.Client, error) {
+	var clients []models.Client
+	if err := cs.db.Find(&clients).Error; err != nil {
+		return nil, err
+	}
+	return clients, nil
+}
+
+func (cs *ConsultationService) GetAllEmployees() ([]models.Employee, error) {
+	var employees []models.Employee
+	if err := cs.db.Find(&employees).Error; err != nil {
+		return nil, err
+	}
+	return employees, nil
+}

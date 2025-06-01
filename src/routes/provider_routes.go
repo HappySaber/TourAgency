@@ -8,7 +8,7 @@ import (
 )
 
 func initProviderRoutes(r *gin.Engine, providerCtrl *controllers.ProviderController, db *gorm.DB) {
-	providers := r.Group("/providers")
+	providers := r.Group("/provider")
 	{
 		providers.GET("/", providerCtrl.List)
 		providers.GET("/new", providerCtrl.New)

@@ -1,0 +1,48 @@
+{{ define "content" }}
+<h2>Редактировать услугу</h2>
+
+<form id="editServiceForm">
+    <input type="hidden" name="id" value="{{ .Service.ID }}">
+
+    <label>Название:</label><br>
+    <input type="text" id="name" name="name" value="{{ .Service.Name }}" required><br><br>
+
+    <label>Цена:</label><br>
+    <input type="text" id="price" name="price" value="{{ .Service.Price }}" required><br><br>
+
+    <button type="submit">Сохранить изменения</button>
+</form>
+
+<script>
+document.getElementById("editServiceForm").addEventListener("submit", async function(e) {
+    e.preventDefault();
+
+    const service = {
+        id: parseInt(document.getElementById("editServiceForm").querySelector('input[name="id"]').value, 10),
+        name: document.getElementById("name").value,
+        price: document.getElementById("price").value
+    };
+    
+    try {
+        const res = await fetch(`/service/edit/${service.id}`, {
+            method: "PUT",
+            headers: { 
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify(service)
+        });
+
+        if (res.ok) {
+            alert("Услуга обновлена");
+            window.location.href = "/service"; // Редирект на список услуг
+        } else {
+            const data = await res.json();
+            alert(data.error || "Ошибка при обновлении");
+        }
+    } catch (err) {
+        alert("Ошибка: " + err.message);
+    }
+});
+</script>
+{{ end }}
+{{ template "base.html" . }}

@@ -1,0 +1,48 @@
+{{ define "content" }}
+<h2>Добавить услугу</h2>
+
+<form id="createServiceForm">
+    <label>Название:</label><br>
+    <input type="text" id="name" name="name" required><br><br>
+
+    <label>Цена:</label><br>
+    <input type="text" id="price" name="price" required><br><br>
+
+    <input type="submit" value="Сохранить">
+</form>
+
+<script>
+document.getElementById("createServiceForm").addEventListener("submit", async function(e) {
+    e.preventDefault();
+
+    try {
+        const service = {
+            name: document.getElementById("name").value,
+            price: document.getElementById("price").value
+        };
+
+        const res = await fetch("/service/new", {
+            method: "POST",
+            headers: { 
+                "Content-Type": "application/json",
+                "Accept": "application/json"
+            },
+            body: JSON.stringify(service)
+        });
+
+        const data = await res.json();
+
+        if (!res.ok) {
+            throw new Error(data.error || data.message || "Неизвестная ошибка");
+        }
+
+        alert(data.message || "Услуга успешно создана");
+        window.location.href = "/service";
+    } catch (err) {
+        console.error("Ошибка при создании услуги:", err);
+        alert("Ошибка: " + err.message);
+    }
+});
+</script>
+{{ end }}
+{{ template "base.html" }}

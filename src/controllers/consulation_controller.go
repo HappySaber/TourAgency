@@ -16,6 +16,40 @@ func NewConsultationController(service *services.ConsultationService) *Consultat
 	return &ConsultationController{service}
 }
 
+// List отображает список поставщиков в HTML
+func (cc *ConsultationController) List(c *gin.Context) {
+	consultation, err := cc.service.GetAll()
+	if err != nil {
+		c.Set("Error", err)
+		return
+	}
+	c.HTML(http.StatusOK, "consultation/consultation", gin.H{
+		"Title":     "Список консультаций",
+		"Providers": consultation,
+	})
+}
+
+// New отображает форму создания нового поставщика
+func (cc *ConsultationController) New(c *gin.Context) {
+	clients, err := cc.service.GetAllClients() // Получите всех клиентов
+	if err != nil {
+		c.HTML(http.StatusInternalServerError, "error", gin.H{"error": "Ошибка получения клиентов"})
+		return
+	}
+
+	employees, err := cc.service.GetAllEmployees() // Получите всех сотрудников
+	if err != nil {
+		c.HTML(http.StatusInternalServerError, "error", gin.H{"error": "Ошибка получения сотрудников"})
+		return
+	}
+
+	c.HTML(http.StatusOK, "consultation/consultation_new", gin.H{
+		"Title":     "Создание новой консультации",
+		"Clients":   clients,
+		"Employees": employees,
+	})
+}
+
 func (cc *ConsultationController) Create(c *gin.Context) {
 	var consultation models.Consultation
 	if err := c.ShouldBind(&consultation); err != nil {
@@ -28,19 +62,19 @@ func (cc *ConsultationController) Create(c *gin.Context) {
 		return
 	}
 
-	c.Redirect(http.StatusSeeOther, "/consultations")
+	c.JSON(http.StatusOK, gin.H{"success": "Consultation created successfully"})
 }
 
 func (cc *ConsultationController) GetAll(c *gin.Context) {
-	consultations, err := cc.service.GetAll()
+	consultation, err := cc.service.GetAll()
 	if err != nil {
 		c.HTML(http.StatusInternalServerError, "error", gin.H{"error": "Ошибка получения данных"})
 		return
 	}
 
-	c.HTML(http.StatusOK, "consultations", gin.H{
+	c.HTML(http.StatusOK, "consultation", gin.H{
 		"Title":         "Список консультаций",
-		"Consultations": consultations,
+		"Consultations": consultation,
 	})
 }
 
@@ -76,7 +110,21 @@ func (cc *ConsultationController) Update(c *gin.Context) {
 		return
 	}
 
-	c.Redirect(http.StatusSeeOther, "/consultations")
+	c.JSON(http.StatusOK, gin.H{"success": "Consultation updated successfully"})
+}
+
+// Edit отображает форму редактирования поставщика
+func (cc *ConsultationController) Edit(c *gin.Context) {
+	id := c.Param("id")
+	client, err := cc.service.GetByID(id)
+	if err != nil {
+		c.Set("Error", err)
+		return
+	}
+	c.HTML(http.StatusOK, "consultation/consultation_edit", gin.H{
+		"Title":    "Редактирование поставщика",
+		"Provider": client,
+	})
 }
 
 func (cc *ConsultationController) Delete(c *gin.Context) {
@@ -86,5 +134,5 @@ func (cc *ConsultationController) Delete(c *gin.Context) {
 		return
 	}
 
-	c.Redirect(http.StatusSeeOther, "/consultations")
+	c.JSON(http.StatusOK, gin.H{"success": "Consultation deleted successfully"})
 }

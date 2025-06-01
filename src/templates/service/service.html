@@ -1,0 +1,45 @@
+{{ define "content" }}
+<h2>Список услуг</h2>
+
+<table border="1" cellpadding="5" cellspacing="0">
+    <thead>
+        <tr>
+            <th>Название</th>
+            <th>Цена</th>
+            <th>Действия</th>
+        </tr>
+    </thead>
+    <tbody>
+        {{ range .Services }}
+        <tr>
+            <td>{{ .Name }}</td>
+            <td>{{ .Price }}</td>
+            <td>
+                <a href="/service/edit/{{ .ID }}">✏️ Редактировать</a>
+                <button onclick="deleteService('{{ .ID }}')">🗑️ Удалить</button>
+            </td>
+        </tr>
+        {{ end }}
+    </tbody>
+</table>
+
+<br>
+<a href="/service/new">➕ Добавить услугу</a>
+
+<script>
+async function deleteService(id) {
+    if (!confirm("Удалить услугу?")) return;
+
+    const res = await fetch(`/service/delete/${id}`, { method: "POST" });
+
+    if (res.ok) {
+        alert("Удалено");
+        location.reload();
+    } else {
+        const data = await res.json();
+        alert(data.error || "Ошибка");
+    }
+}
+</script>
+{{ end }}
+{{ template "base.html" }}

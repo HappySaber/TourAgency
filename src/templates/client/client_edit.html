@@ -1,0 +1,66 @@
+{{ define "content" }}
+<h2>Редактирование клиента</h2>
+
+<form id="editClientForm">
+    <input type="hidden" name="_csrf" value="{{ .CSRFToken }}">
+    <input type="hidden" name="id" value="{{ .Client.ID }}">
+    
+    <label>Имя:</label><br>
+    <input type="text" id="firstname" name="firstname" value="{{ .Client.Firstname }}" required><br><br>
+    
+    <label>Фамилия:</label><br>
+    <input type="text" id="lastname" name="lastname" value="{{ .Client.Lastname }}" required><br><br>
+    
+    <label>Отчество:</label><br>
+    <input type="text" id="middlename" name="middlename" value="{{ .Client.Middlename }}"><br><br>
+    
+    <label>Адрес:</label><br>
+    <input type="text" id="address" name="address" value="{{ .Client.Address }}" required><br><br>
+    
+    <label>Телефон:</label><br>
+    <input type="tel" id="phonenumber" name="phonenumber" value="{{ .Client.Phonenumber }}" pattern="\d{10}" placeholder="1234567890" required><br><br>
+    
+    <label>Дата рождения:</label><br>
+    <input type="date" id="dateofbirth" name="dateofbirth" value="{{ .Client.Dateofbirth.Format "2006-01-02" }}" required><br><br>
+    
+    <button type="submit">Сохранить изменения</button>
+</form>
+
+<script>
+document.getElementById("editClientForm").addEventListener("submit", async function(e) {
+    e.preventDefault();
+
+    const client = {
+        id: document.getElementById("editClientForm").querySelector('input[name="id"]').value,
+        firstname: document.getElementById("firstname").value,
+        lastname: document.getElementById("lastname").value,
+        middlename: document.getElementById("middlename").value,
+        address: document.getElementById("address").value,
+        phonenumber: document.getElementById("phonenumber").value,
+        dateofbirth: new Date(document.getElementById("dateofbirth").value).toISOString()
+    };
+    
+    try {
+        const res = await fetch(`/client/edit/${client.id}`, {
+            method: "PUT",
+            headers: { 
+                "Content-Type": "application/json",
+                "X-CSRF-Token": document.getElementById("editClientForm").querySelector('input[name="_csrf"]').value
+            },
+            body: JSON.stringify(client)
+        });
+        
+        if (res.ok) {
+            alert("Клиент обновлен");
+            window.location.href = "/client"; // Редирект на список клиентов
+        } else {
+            const data = await res.json();
+            alert(data.error || "Ошибка при обновлении");
+        }
+    } catch (err) {
+        alert("Ошибка: " + err.message);
+    }
+});
+</script>
+{{ end }}
+{{ template "base.html" . }}

@@ -128,8 +128,7 @@ func (tc *TourController) Update(c *gin.Context) {
 		return
 	}
 
-	// Перенаправление после успешного обновления
-	c.Redirect(http.StatusSeeOther, "/tours")
+	c.JSON(http.StatusOK, gin.H{"success": "Tour created successfully"})
 }
 
 func (tc *TourController) Delete(c *gin.Context) {
@@ -144,5 +143,5 @@ func (tc *TourController) Delete(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"message": "Тур успешно удалён"})
+	c.JSON(http.StatusOK, gin.H{"success": "Tour deleted successfully"})
 }

@@ -21,7 +21,7 @@
             <td>{{ .Email }}</td>
             <td>{{ .PhoneNumber }}</td>
             <td>
-                <a href="/providers/edit/{{ .ID }}">✏️ Редактировать</a>
+                <a href="/provider/edit/{{ .ID }}">✏️ Редактировать</a>
                 <button onclick="deleteProvider('{{ .ID }}')">🗑️ Удалить</button>
             </td>
         </tr>
@@ -30,13 +30,13 @@
 </table>
 
 <br>
-<a href="/providers/new">➕ Добавить провайдера</a>
+<a href="/provider/new">➕ Добавить провайдера</a>
 
 <script>
 async function deleteProvider(id) {
     if (!confirm("Удалить провайдера?")) return;
 
-    const res = await fetch(`/providers/delete/${id}`, { method: "POST" });
+    const res = await fetch(`/provider/delete/${id}`, { method: "POST" });
 
     if (res.ok) {
         alert("Удалено");

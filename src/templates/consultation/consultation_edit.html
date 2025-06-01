@@ -1,0 +1,67 @@
+{{ define "content" }}
+<h2>Редактирование консультации</h2>
+
+<form id="editConsultationForm">
+    <input type="hidden" name="_csrf" value="{{ .CSRFToken }}">
+    <input type="hidden" name="id" value="{{ .Consultation.ID }}">
+    
+    <label>Дата консультации:</label><br>
+    <input type="date" name="dateofconsultation" value="{{ .Consultation.DateOfConsultation.Format "2006-01-02" }}" required><br><br>
+    
+    <label>Время консультации:</label><br>
+    <input type="time" name="timeofconsultation" value="{{ .Consultation.TimeOfConsultation.Format "15:04:05" }}" required><br><br>
+
+    <label>Клиент:</label><br>
+    <select name="client" required>
+        <option value="">-- Выберите клиента --</option>
+        {{ range .Clients }}
+        <option value="{{ .ID }}" {{ if eq .ID $.Consultation.ClientID }}selected{{ end }}>{{ .Firstname }} {{ .Lastname }}</option>
+        {{ end }}
+    </select><br><br>
+
+    <label>Сотрудник:</label><br>
+    <select name="employee" required>
+        <option value="">-- Выберите сотрудника --</option>
+        {{ range .Employees }}
+        <option value="{{ .ID }}" {{ if eq .ID $.Consultation.EmployeeID }}selected{{ end }}>{{ .Firstname }} {{ .Lastname }}</option>
+        {{ end }}
+    </select><br><br>
+
+    <button type="submit">Сохранить изменения</button>
+</form>
+
+<script>
+document.getElementById("editConsultationForm").addEventListener("submit", async function(e) {
+    e.preventDefault();
+    const form = e.target;
+    const formData = new FormData(form);
+    const consultation = {
+        id: formData.get("id"),
+        dateofconsultation: formData.get("dateofconsultation"),
+        timeofconsultation: formData.get("timeofconsultation"), // Изменено на timeofconsultation
+        client: formData.get("client"),
+        employee: formData.get("employee")
+    };
+    try {
+        const res = await fetch(`/consultation/edit/${consultation.id}`, {
+            method: "PUT",
+            headers: { 
+                "Content-Type": "application/json",
+                "X-CSRF-Token": formData.get("_csrf")
+            },
+            body: JSON.stringify(consultation)
+        });
+        if (res.ok) {
+            alert("Консультация обновлена");
+            window.location.href = "/consultation";
+        } else {
+            const data = await res.json();
+            alert(data.error || "Ошибка при обновлении");
+        }
+    } catch (err) {
+        alert("Ошибка: " + err.message);
+    }
+});
+</script>
+{{ end }}
+{{ template "base.html" }}

@@ -3,19 +3,19 @@
 
 <form id="createProviderForm">
     <label>Название:</label><br>
-    <input type="text" id="name"><br><br>
+    <input type="text" id="name" name="name" required><br><br>
 
     <label>Адрес назначения:</label><br>
-    <input type="text" id="addressto"><br><br>
+    <input type="text" id="addressto" name="addressto" required><br><br>
 
     <label>Адрес:</label><br>
-    <input type="text" id="address"><br><br>
+    <input type="text" id="address" name="address" required><br><br>
 
     <label>Email:</label><br>
-    <input type="email" id="email"><br><br>
+    <input type="email" id="email" name="email" required><br><br>
 
     <label>Телефон:</label><br>
-    <input type="text" id="phonenumber"><br><br>
+    <input type="text" id="phonenumber" name="phonenumber" required><br><br>
 
     <input type="submit" value="Сохранить">
 </form>
@@ -24,26 +24,38 @@
 document.getElementById("createProviderForm").addEventListener("submit", async function(e) {
     e.preventDefault();
 
-    const provider = {
-        name: document.getElementById("name").value,
-        addressto: document.getElementById("addressto").value,
-        address: document.getElementById("address").value,
-        email: document.getElementById("email").value,
-        phonenumber: document.getElementById("phonenumber").value
-    };
+    try {
+        const provider = {
+            name: document.getElementById("name").value,
+            addressto: document.getElementById("addressto").value,
+            address: document.getElementById("address").value,
+            email: document.getElementById("email").value,
+            phonenumber: document.getElementById("phonenumber").value
+        };
 
-    const res = await fetch("/providers", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(provider)
-    });
+        const res = await fetch("/provider/new", {
+            method: "POST",
+            headers: { 
+                "Content-Type": "application/json",
+                "Accept": "application/json"
+            },
+            body: JSON.stringify(provider)
+        });
 
-    if (res.ok) {
-        alert("Добавлено");
-        window.location.href = "/providers";
-    } else {
         const data = await res.json();
-        alert(data.error || "Ошибка");
+
+        if (!res.ok) {
+            throw new Error(data.error || data.message || "Неизвестная ошибка");
+        }
+
+        alert(data.message || "Поставщик успешно создан");
+        window.location.href = "/provider";
+        if (data.redirect) {
+            window.location.href = data.redirect;
+        }
+    } catch (err) {
+        console.error("Ошибка при создании поставщика:", err);
+        alert("Ошибка: " + err.message);
     }
 });
 </script>

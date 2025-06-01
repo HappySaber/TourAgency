@@ -2,33 +2,33 @@
 <h2>Редактировать провайдера</h2>
 
 <form id="editProviderForm">
-    <input type="hidden" id="id" value="{{ .Provider.ID }}">
+    <input type="hidden" name="_csrf" value="{{ .CSRFToken }}">
+    <input type="hidden" name="id" value="{{ .Provider.ID }}">
 
     <label>Название:</label><br>
-    <input type="text" id="name" value="{{ .Provider.Name }}"><br><br>
+    <input type="text" id="name" name="name" value="{{ .Provider.Name }}" required><br><br>
 
     <label>Адрес назначения:</label><br>
-    <input type="text" id="addressto" value="{{ .Provider.Addressto }}"><br><br>
+    <input type="text" id="addressto" name="addressto" value="{{ .Provider.Addressto }}" required><br><br>
 
     <label>Адрес:</label><br>
-    <input type="text" id="address" value="{{ .Provider.Address }}"><br><br>
+    <input type="text" id="address" name="address" value="{{ .Provider.Address }}" required><br><br>
 
     <label>Email:</label><br>
-    <input type="email" id="email" value="{{ .Provider.Email }}"><br><br>
+    <input type="email" id="email" name="email" value="{{ .Provider.Email }}" required><br><br>
 
     <label>Телефон:</label><br>
-    <input type="text" id="phonenumber" value="{{ .Provider.PhoneNumber }}"><br><br>
+    <input type="text" id="phonenumber" name="phonenumber" value="{{ .Provider.PhoneNumber }}" required><br><br>
 
-    <input type="submit" value="Сохранить изменения">
+    <button type="submit">Сохранить изменения</button>
 </form>
 
 <script>
 document.getElementById("editProviderForm").addEventListener("submit", async function(e) {
     e.preventDefault();
 
-    const id = document.getElementById("id").value;
-
     const provider = {
+        id: document.getElementById("editProviderForm").querySelector('input[name="id"]').value,
         name: document.getElementById("name").value,
         addressto: document.getElementById("addressto").value,
         address: document.getElementById("address").value,
@@ -36,20 +36,27 @@ document.getElementById("editProviderForm").addEventListener("submit", async fun
         phonenumber: document.getElementById("phonenumber").value
     };
 
-    const res = await fetch(`/providers/edit/${id}`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(provider)
-    });
+    try {
+        const res = await fetch(`/provider/edit/${provider.id}`, {
+            method: "PUT",
+            headers: { 
+                "Content-Type": "application/json",
+                "X-CSRF-Token": document.getElementById("editProviderForm").querySelector('input[name="_csrf"]').value
+            },
+            body: JSON.stringify(provider)
+        });
 
-    if (res.ok) {
-        alert("Обновлено");
-        window.location.href = "/providers";
-    } else {
-        const data = await res.json();
-        alert(data.error || "Ошибка");
+        if (res.ok) {
+            alert("Провайдер обновлен");
+            window.location.href = "/provider"; // Редирект на список провайдеров
+        } else {
+            const data = await res.json();
+            alert(data.error || "Ошибка при обновлении");
+        }
+    } catch (err) {
+        alert("Ошибка: " + err.message);
     }
 });
 </script>
 {{ end }}
-{{ template "base.html" }}
+{{ template "base.html" . }}

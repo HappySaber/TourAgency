@@ -1,0 +1,56 @@
+{{ define "content" }}
+<h2>Список консультаций</h2>
+
+<table border="1" cellpadding="5" cellspacing="0">
+    <thead>
+        <tr>
+            <th>Дата консультации</th>
+            <th>Время консультации</th>
+            <th>Клиент</th>
+            <th>Сотрудник</th>
+            <th>Действия</th>
+        </tr>
+    </thead>
+    <tbody>
+        {{ range .Consultations }}
+        <tr>
+            <td>{{ .DateOfConsultation.Format "2006-01-02" }}</td>
+            <td>{{ .TimeOfConsultation.Format "15:04:05" }}</td>
+            <td>{{ .Client.Firstname }} {{ .Client.Lastname }}</td>
+            <td>{{ .Employee.Firstname }} {{ .Employee.Lastname }}</td>
+            <td>
+                <a href="/consultation/edit/{{ .ID }}">✏️ Редактировать</a>
+                <button onclick="deleteConsultation('{{ .ID }}')">🗑️ Удалить</button>
+            </td>
+        </tr>
+        {{ end }}
+    </tbody>
+</table>
+
+<br>
+<a href="/consultation/new">➕ Добавить консультацию</a>
+
+<script>
+async function deleteConsultation(id) {
+    if (!confirm("Удалить консультацию?")) return;
+
+    try {
+        const res = await fetch(`/consultation/${id}`, {
+            method: "DELETE",
+            headers: { "Content-Type": "application/json" }
+        });
+
+        if (res.ok) {
+            alert("Консультация удалена");
+            location.reload();
+        } else {
+            const data = await res.json();
+            alert(data.error || "Ошибка при удалении");
+        }
+    } catch (err) {
+        alert("Ошибка: " + err.message);
+    }
+}
+</script>
+{{ end }}
+{{ template "base.html" }}

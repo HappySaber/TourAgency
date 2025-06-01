@@ -17,14 +17,15 @@ func NewServiceController(service *services.ServService) *ServiceController {
 	return &ServiceController{service}
 }
 
-func (sc *ServiceController) GetAll(c *gin.Context) {
+// List отображает список услуг
+func (sc *ServiceController) List(c *gin.Context) {
 	services, err := sc.service.GetAll()
 	if err != nil {
 		c.HTML(http.StatusInternalServerError, "error", gin.H{"error": "Не удалось загрузить услуги"})
 		return
 	}
 
-	c.HTML(http.StatusOK, "services", gin.H{
+	c.HTML(http.StatusOK, "service/service", gin.H{
 		"Title":    "Список услуг",
 		"Services": services,
 	})
@@ -49,10 +50,17 @@ func (sc *ServiceController) GetByID(c *gin.Context) {
 	})
 }
 
+// New отображает форму создания новой услуги
+func (sc *ServiceController) New(c *gin.Context) {
+	c.HTML(http.StatusOK, "service/service_new", gin.H{
+		"Title": "Создание новой услуги",
+	})
+}
+
 func (sc *ServiceController) Create(c *gin.Context) {
 	var service models.Service
 	if err := c.ShouldBind(&service); err != nil {
-		c.HTML(http.StatusBadRequest, "error", gin.H{"error": "Ошибка в форме"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Ошибка в форме"})
 		return
 	}
 
@@ -61,10 +69,11 @@ func (sc *ServiceController) Create(c *gin.Context) {
 		return
 	}
 
-	c.Redirect(http.StatusSeeOther, "/services")
+	c.JSON(http.StatusOK, gin.H{"success": "Услуга успешно создана"})
 }
 
-func (sc *ServiceController) Update(c *gin.Context) {
+// Edit отображает форму редактирования услуги
+func (sc *ServiceController) Edit(c *gin.Context) {
 	id, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
 		c.HTML(http.StatusBadRequest, "error", gin.H{"error": "Некорректный ID"})
@@ -77,17 +86,39 @@ func (sc *ServiceController) Update(c *gin.Context) {
 		return
 	}
 
-	if err := c.ShouldBind(service); err != nil {
-		c.HTML(http.StatusBadRequest, "error", gin.H{"error": "Ошибка в форме"})
+	c.HTML(http.StatusOK, "service/service_edit", gin.H{
+		"Title":   "Редактирование услуги",
+		"Service": service,
+	})
+}
+
+func (sc *ServiceController) Update(c *gin.Context) {
+	id, err := strconv.Atoi(c.Param("id"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Некорректный ID"})
 		return
 	}
 
-	if err := sc.service.Update(service); err != nil {
-		c.HTML(http.StatusInternalServerError, "error", gin.H{"error": "Ошибка при обновлении услуги"})
+	service, err := sc.service.GetByID(id)
+	if err != nil || service == nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Услуга не найдена"})
 		return
 	}
 
-	c.Redirect(http.StatusSeeOther, "/services")
+	var updatedService models.Service
+	if err := c.ShouldBindJSON(&updatedService); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Ошибка в форме", "details": err.Error()})
+		return
+	}
+
+	updatedService.ID = service.ID
+
+	if err := sc.service.Update(&updatedService); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Ошибка при обновлении услуги"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"success": "Услуга успешно обновлена"})
 }
 
 func (sc *ServiceController) Delete(c *gin.Context) {
@@ -102,5 +133,5 @@ func (sc *ServiceController) Delete(c *gin.Context) {
 		return
 	}
 
-	c.Redirect(http.StatusSeeOther, "/services")
+	c.JSON(http.StatusOK, gin.H{"success": "Услуга успешно удалена"})
 }

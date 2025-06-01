@@ -23,7 +23,7 @@ func (pc *ProviderController) List(c *gin.Context) {
 		c.Set("Error", err)
 		return
 	}
-	c.HTML(http.StatusOK, "providers/providers", gin.H{
+	c.HTML(http.StatusOK, "provider/provider", gin.H{
 		"Title":     "Список поставщиков",
 		"Providers": providers,
 	})
@@ -31,7 +31,7 @@ func (pc *ProviderController) List(c *gin.Context) {
 
 // New отображает форму создания нового поставщика
 func (pc *ProviderController) New(c *gin.Context) {
-	c.HTML(http.StatusOK, "providers/provider_new", gin.H{
+	c.HTML(http.StatusOK, "provider/provider_new", gin.H{
 		"Title": "Создание нового поставщика",
 	})
 }
@@ -43,7 +43,7 @@ func (pc *ProviderController) GetAll(c *gin.Context) {
 		return
 	}
 
-	c.HTML(http.StatusOK, "providers", gin.H{
+	c.HTML(http.StatusOK, "provider", gin.H{
 		"Title":     "Список поставщиков",
 		"Providers": providers,
 	})
@@ -65,8 +65,8 @@ func (pc *ProviderController) GetByID(c *gin.Context) {
 
 func (pc *ProviderController) Create(c *gin.Context) {
 	var provider models.Provider
-	if err := c.ShouldBind(&provider); err != nil {
-		c.HTML(http.StatusBadRequest, "error", gin.H{"error": "Ошибка формы"})
+	if err := c.ShouldBindJSON(&provider); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Ошибка формы"})
 		return
 	}
 
@@ -75,7 +75,7 @@ func (pc *ProviderController) Create(c *gin.Context) {
 		return
 	}
 
-	c.Redirect(http.StatusSeeOther, "/providers")
+	c.JSON(http.StatusOK, gin.H{"success": "Provider created successfully"})
 }
 
 // Edit отображает форму редактирования поставщика
@@ -86,7 +86,7 @@ func (pc *ProviderController) Edit(c *gin.Context) {
 		c.Set("Error", err)
 		return
 	}
-	c.HTML(http.StatusOK, "providers/provider_edit", gin.H{
+	c.HTML(http.StatusOK, "provider/provider_edit", gin.H{
 		"Title":    "Редактирование поставщика",
 		"Provider": provider,
 	})
@@ -110,7 +110,7 @@ func (pc *ProviderController) Update(c *gin.Context) {
 		return
 	}
 
-	c.Redirect(http.StatusSeeOther, "/providers")
+	c.JSON(http.StatusOK, gin.H{"success": "Provider updated successfully"})
 }
 
 func (pc *ProviderController) Delete(c *gin.Context) {
@@ -120,5 +120,6 @@ func (pc *ProviderController) Delete(c *gin.Context) {
 		return
 	}
 
-	c.Redirect(http.StatusSeeOther, "/providers")
+	c.JSON(http.StatusOK, gin.H{"success": "Provider deleted successfully"})
+	//c.Redirect(http.StatusSeeOther, "/provider")
 }

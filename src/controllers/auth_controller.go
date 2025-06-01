@@ -16,7 +16,6 @@ func NewAuthController(service *services.AuthService) *AuthController {
 	return &AuthController{service}
 }
 
-// LoginPage отображает страницу логина
 func (ac *AuthController) LoginPage(c *gin.Context) {
 	positions, err := ac.service.GetPositions()
 	if err != nil {
@@ -46,14 +45,13 @@ func (ac *AuthController) Login(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"success": "User logged in"})
 }
 
-// CreateEmployeePage отображает страницу создания нового сотрудника
 func (ac *AuthController) CreateEmployeePage(c *gin.Context) {
 	positions, err := ac.service.GetPositions()
 	if err != nil {
 		c.Set("Error", err)
 		return
 	}
-	c.HTML(http.StatusOK, "auth/create_new_empl", gin.H{
+	c.HTML(http.StatusOK, "auth/create-employee", gin.H{
 		"Title":     "Создание нового сотрудника",
 		"Positions": positions,
 	})

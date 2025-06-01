@@ -46,7 +46,7 @@
             provider: document.getElementById("provider").value
         };
     
-        const res = await fetch(`/providers/edit/${id}`, {
+        const res = await fetch(`/provider/edit/${id}`, {
             method: "PUT",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify(provider)

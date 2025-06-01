@@ -8,7 +8,7 @@ import (
 )
 
 func initAuthRoutes(r *gin.Engine, authCtrl *controllers.AuthController, db *gorm.DB) {
-	auth := r.Group("/auth")
+	auth := r.Group("")
 	{
 		auth.GET("/login", authCtrl.LoginPage)
 		auth.POST("/login", authCtrl.Login)
