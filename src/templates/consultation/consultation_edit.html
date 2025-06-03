@@ -4,26 +4,30 @@
 <form id="editConsultationForm">
     <input type="hidden" name="_csrf" value="{{ .CSRFToken }}">
     <input type="hidden" name="id" value="{{ .Consultation.ID }}">
-    
+
     <label>Дата консультации:</label><br>
-    <input type="date" name="dateofconsultation" value="{{ .Consultation.DateOfConsultation.Format "2006-01-02" }}" required><br><br>
-    
+    <input type="date" id="dateofconsultation" name="dateofconsultation" value="{{ .Consultation.DateOfConsultation.Format "2006-01-02" }}" required><br><br>
+
     <label>Время консультации:</label><br>
-    <input type="time" name="timeofconsultation" value="{{ .Consultation.TimeOfConsultation.Format "15:04:05" }}" required><br><br>
+    <input type="time" id="timeofconsultation" name="timeofconsultation" value="{{ .Consultation.TimeOfConsultation.Format "15:04" }}" required><br><br>
 
     <label>Клиент:</label><br>
-    <select name="client" required>
+    <select id="client" name="client" required>
         <option value="">-- Выберите клиента --</option>
         {{ range .Clients }}
         <option value="{{ .ID }}" {{ if eq .ID $.Consultation.ClientID }}selected{{ end }}>{{ .Firstname }} {{ .Lastname }}</option>
         {{ end }}
     </select><br><br>
 
+    <label>Примечания</label><br>
+    <input type="text" id="notes" name="notes" value="{{ .Consultation.Notes }}"><br><br>
+
+
     <label>Сотрудник:</label><br>
-    <select name="employee" required>
+    <select id="employee" name="employee" required>
         <option value="">-- Выберите сотрудника --</option>
         {{ range .Employees }}
-        <option value="{{ .ID }}" {{ if eq .ID $.Consultation.EmployeeID }}selected{{ end }}>{{ .Firstname }} {{ .Lastname }}</option>
+        <option value="{{ .ID }}" {{ if eq .ID $.Consultation.EmployeeID }}selected{{ end }}>{{ .FirstName }} {{ .LastName }}</option>
         {{ end }}
     </select><br><br>
 
@@ -33,24 +37,32 @@
 <script>
 document.getElementById("editConsultationForm").addEventListener("submit", async function(e) {
     e.preventDefault();
-    const form = e.target;
-    const formData = new FormData(form);
-    const consultation = {
-        id: formData.get("id"),
-        dateofconsultation: formData.get("dateofconsultation"),
-        timeofconsultation: formData.get("timeofconsultation"), // Изменено на timeofconsultation
-        client: formData.get("client"),
-        employee: formData.get("employee")
-    };
+
+    const form = document.getElementById("editConsultationForm");
+
+const consultation = {
+    id: form.querySelector('input[name="id"]').value,
+    dateofconsultation: form.querySelector('input[name="dateofconsultation"]').value,
+    timeofconsultation: form.querySelector('input[name="timeofconsultation"]').value,
+    client: form.querySelector('select[name="client"]').value,
+    employee: form.querySelector('select[name="employee"]').value,
+};
+
+// Проверяем, есть ли значение в поле notes, и добавляем его в объект, если оно существует
+const notesValue = form.querySelector('input[name="notes"]').value; // Измените на 'input' вместо 'select', если это текстовое поле
+if (notesValue) {
+    consultation.notes = notesValue;
+}
+
     try {
         const res = await fetch(`/consultation/edit/${consultation.id}`, {
             method: "PUT",
-            headers: { 
-                "Content-Type": "application/json",
-                "X-CSRF-Token": formData.get("_csrf")
+            headers: {
+                "Content-Type": "application/json"
             },
             body: JSON.stringify(consultation)
         });
+
         if (res.ok) {
             alert("Консультация обновлена");
             window.location.href = "/consultation";
@@ -64,4 +76,4 @@ document.getElementById("editConsultationForm").addEventListener("submit", async
 });
 </script>
 {{ end }}
-{{ template "base.html" }}
+{{ template "base.html" . }}

@@ -8,6 +8,7 @@
             <th>Время консультации</th>
             <th>Клиент</th>
             <th>Сотрудник</th>
+            <th>Примечания</th>
             <th>Действия</th>
         </tr>
     </thead>
@@ -17,9 +18,12 @@
             <td>{{ .DateOfConsultation.Format "2006-01-02" }}</td>
             <td>{{ .TimeOfConsultation.Format "15:04:05" }}</td>
             <td>{{ .Client.Firstname }} {{ .Client.Lastname }}</td>
-            <td>{{ .Employee.Firstname }} {{ .Employee.Lastname }}</td>
+            <td>{{ .Employee.FirstName }} {{ .Employee.LastName }}</td>
+            <td>{{ .Notes }}</td>
             <td>
                 <a href="/consultation/edit/{{ .ID }}">✏️ Редактировать</a>
+                <a href="/consultation/{{ .ID }}/tours">🧳 Туры</a><br>
+                <a href="/consultation/{{ .ID }}/services">🛠 Услуги</a><br>
                 <button onclick="deleteConsultation('{{ .ID }}')">🗑️ Удалить</button>
             </td>
         </tr>

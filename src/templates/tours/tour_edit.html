@@ -1,26 +1,32 @@
 {{ define "content" }}
 <h2>Редактировать тур</h2>
 <form id="editTourForm">
-    <label>Название:</label><br>
-    <input type="text" name="name" value="{{ .Tour.Name }}" required><br><br>
 
-    <label>Рейтинг:</label><br>
-    <input type="text" name="rating" value="{{ .Tour.Rating }}"><br><br>
+    <input type="hidden" name="id" id="id" value="{{ .Tour.ID }}">
 
-    <label>Отель:</label><br>
-    <input type="text" name="hotel" value="{{ .Tour.Hotel }}"><br><br>
+    <label for="name">Название:</label><br>
+    <input type="text" id="name" name="name" value="{{ .Tour.Name }}" required><br><br>
 
-    <label>Питание:</label><br>
-    <input type="text" name="nutrition" value="{{ .Tour.Nutrition }}"><br><br>
+    <label for="rating">Рейтинг:</label><br>
+    <input type="text" id="rating" name="rating" value="{{ .Tour.Rating }}"><br><br>
 
-    <label>Город:</label><br>
-    <input type="text" name="city" value="{{ .Tour.City }}"><br><br>
+    <label for="hotel">Отель:</label><br>
+    <input type="text" id="hotel" name="hotel" value="{{ .Tour.Hotel }}"><br><br>
 
-    <label>Страна:</label><br>
-    <input type="text" name="country" value="{{ .Tour.Country }}"><br><br>
+    <label for="nutrition">Питание:</label><br>
+    <input type="text" id="nutrition" name="nutrition" value="{{ .Tour.Nutrition }}"><br><br>
 
-    <label>Провайдер:</label><br>
-    <select name="provider" required>
+    <label for="city">Город:</label><br>
+    <input type="text" id="city" name="city" value="{{ .Tour.City }}"><br><br>
+
+    <label for="country">Страна:</label><br>
+    <input type="text" id="country" name="country" value="{{ .Tour.Country }}"><br><br>
+
+    <label for="price">Цена:</label><br>
+    <input type="text" id="price" name="price" value="{{ .Tour.Price }}"><br><br>
+
+    <label for="provider">Провайдер:</label><br>
+    <select id="provider" name="provider" required>
         <option value="">-- Выберите провайдера --</option>
         {{ range .Providers }}
         <option value="{{ .ID }}" {{ if eq .ID $.Tour.ProviderID }}selected{{ end }}>{{ .Name }}</option>
@@ -43,10 +49,11 @@
             nutrition: document.getElementById("nutrition").value,
             city: document.getElementById("city").value,
             country: document.getElementById("country").value,
-            provider: document.getElementById("provider").value
+            provider: document.getElementById("provider").value,
+            price: document.getElementById("price").value
         };
     
-        const res = await fetch(`/provider/edit/${id}`, {
+        const res = await fetch(`/tours/edit/${id}`, {
             method: "PUT",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify(provider)

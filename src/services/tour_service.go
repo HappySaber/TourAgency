@@ -23,7 +23,7 @@ func (ts *TourService) GetAll() ([]*models.Tour, error) {
 
 func (ts *TourService) GetByID(id string) (*models.Tour, error) {
 	var tour models.Tour
-	err := ts.db.First(&tour, id).Error
+	err := ts.db.First(&tour, "id = ?", id).Error // Используем оператор сравнения
 	if errors.Is(err, gorm.ErrRecordNotFound) {
 		return nil, nil
 	}

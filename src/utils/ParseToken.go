@@ -23,6 +23,7 @@ func ParseToken(tokenString string) (*models.Claims, error) {
 	}
 
 	claims, ok := token.Claims.(*models.Claims)
+
 	if !ok || !token.Valid {
 		return nil, fmt.Errorf("invalid token claims or token is not valid")
 	}

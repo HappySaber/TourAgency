@@ -5,7 +5,7 @@
     <thead>
         <tr>
             <th>Название</th>
-            <th>Адрес назначения</th>
+            <th>Обращаться К</th>
             <th>Адрес</th>
             <th>Email</th>
             <th>Телефон</th>
@@ -36,7 +36,7 @@
 async function deleteProvider(id) {
     if (!confirm("Удалить провайдера?")) return;
 
-    const res = await fetch(`/provider/delete/${id}`, { method: "POST" });
+    const res = await fetch(`/provider/delete/${id}`, { method: "DELETE" });
 
     if (res.ok) {
         alert("Удалено");

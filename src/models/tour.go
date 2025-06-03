@@ -11,5 +11,6 @@ type Tour struct {
 	Nutrition  string    `json:"nutrition" gorm:"type:varchar(64);column:nutrition"`                   // Питание
 	City       string    `json:"city" gorm:"type:varchar(64);column:city"`                             // Город
 	Country    string    `json:"country" gorm:"type:varchar(64);column:country"`                       // Страна
-	ProviderID uuid.UUID `json:"provider" gorm:"type:uuid;column:providerid"`                          // Идентификатор провайдера
+	ProviderID uuid.UUID `json:"provider" gorm:"type:uuid;column:provider"`                            // Идентификатор провайдера
+	Price      string    `json:"price" gorm:"type:varchar(64);column:price"`                           //Цена за тур/человек
 }

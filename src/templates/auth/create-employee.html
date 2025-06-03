@@ -1,5 +1,5 @@
 {{define "content"}}
-<h2>Регистрация</h2>
+<h2>Создание сотрудника</h2>
 <form id="registerForm">
     <label for="email">Email:</label><br>
     <input type="email" id="email" name="email" required><br><br>
@@ -35,10 +35,9 @@
         {{ end }}
     </select><br><br>
 
-    <input type="submit" value="Зарегистрироваться">
+    <input type="submit" value="Создать">
 </form>
 
-<p>Уже есть аккаунт? <a href="/login">Войти</a></p>
 
 <script>
 document.getElementById("registerForm").addEventListener("submit", async function(e) {

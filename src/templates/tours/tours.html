@@ -1,46 +1,60 @@
 {{ define "content" }}
 <h2>Список туров</h2>
 
-<!-- Кнопка добавления тура -->
-<div style="margin-bottom: 20px;">
-    <a href="/tours/new">
-        <button>➕ Добавить тур</button>
-    </a>
-</div>
-
-<!-- Таблица туров -->
-<table border="1" cellpadding="10" cellspacing="0" style="width: 100%; border-collapse: collapse;">
+<table border="1" cellpadding="5" cellspacing="0" style="width: 100%; border-collapse: collapse;">
     <thead>
         <tr>
             <th>Название</th>
-            <th>Описание</th>
+            <th>Рейтинг</th>
+            <th>Отель</th>
+            <th>Питание</th>
+            <th>Город</th>
+            <th>Страна</th>
             <th>Цена</th>
-            <th style="text-align: center;">Действия</th>
+            <th>Действия</th>
         </tr>
     </thead>
     <tbody>
         {{ range .Tours }}
         <tr>
             <td>{{ .Name }}</td>
-            <td>{{ .Description }}</td>
-            <td>{{ printf "%.2f" .Price }} ₽</td>
-            <td style="text-align: center;">
-                <a href="/tours/edit/{{ .ID }}">
-                    <button style="margin-right: 5px;">✏️</button>
-                </a>
-                <form action="/tours/delete/{{ .ID }}" method="POST" style="display: inline;">
-                    <button type="submit" onclick="return confirm('Вы уверены, что хотите удалить тур?');">🗑</button>
-                </form>
+            <td>{{ .Rating }}</td>
+            <td>{{ .Hotel }}</td>
+            <td>{{ .Nutrition }}</td>
+            <td>{{ .City }}</td>
+            <td>{{ .Country }}</td>
+            <td>{{ .Price }} ₽</td>
+            <td>
+                <a href="/tours/edit/{{ .ID }}">✏️ Редактировать</a>
+            <!--    <button onclick="deleteTour('{{ .ID }}')">🗑️ Удалить</button> -->
             </td>
         </tr>
         {{ else }}
         <tr>
-            <td colspan="4" style="text-align: center;">Нет доступных туров</td>
+            <td colspan="8" style="text-align: center;">Нет доступных туров</td>
         </tr>
         {{ end }}
     </tbody>
 </table>
+
+<br>
+<a href="/tours/new">➕ Добавить тур</a>
+
+<script>
+async function deleteTour(id) {
+    if (!confirm("Удалить тур?")) return;
+
+    const res = await fetch(`/tours/${id}`, { method: "DELETE" });
+
+    if (res.ok) {
+        alert("Тур удалён");
+        location.reload();
+    } else {
+        const data = await res.json();
+        alert(data.error || "Ошибка при удалении");
+    }
+}
+</script>
 {{ end }}
 
-{{ template "base.html" }}
-
+{{ template "base.html" . }}

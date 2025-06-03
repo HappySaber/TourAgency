@@ -14,4 +14,5 @@ type Client struct {
 	Address     string    `gorm:"type:varchar(255);not null;column:address" json:"address"`
 	Phonenumber string    `gorm:"type:varchar(10);column:phonenumber" json:"phonenumber,omitempty"`
 	Dateofbirth time.Time `gorm:"type:date;column:dateofbirth" json:"dateofbirth"`
+	Passport    string    `gorm:"type:varchar(32):date;column:passport" json:"passport"`
 }

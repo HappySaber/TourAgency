@@ -1,0 +1,54 @@
+{{ define "content" }}
+<h2>Редактировать должность</h2>
+
+<form id="editPositionForm">
+    <input type="hidden" name="_csrf" value="{{ .CSRFToken }}">
+    <input type="hidden" name="id" value="{{ .Position.ID }}">
+
+    <label>Название:</label><br>
+    <input type="text" id="name" name="name" value="{{ .Position.Name }}" required><br><br>
+
+    <label>Зарплата:</label><br>
+    <input type="text" id="salary" name="salary" value="{{ .Position.Salary }}" required><br><br>
+
+    <label>Обязанности:</label><br>
+    <input type="text" id="responsibilities" name="responsibilities" value="{{ .Position.Responsibilities }}" required><br><br>
+
+    <button type="submit">Сохранить изменения</button>
+</form>
+
+<script>
+document.getElementById("editPositionForm").addEventListener("submit", async function(e) {
+    e.preventDefault();
+
+    const position = {
+        id: document.getElementById("editPositionForm").querySelector('input[name="id"]').value,
+        name: document.getElementById("name").value,
+        salary: document.getElementById("salary").value,
+        responsibilities: document.getElementById("responsibilities").value,
+    };
+
+    try {
+        const res = await fetch(`/position/edit/${position.id}`, {
+            method: "PUT",
+            headers: { 
+                "Content-Type": "application/json",
+                "X-CSRF-Token": document.getElementById("editPositionForm").querySelector('input[name="_csrf"]').value
+            },
+            body: JSON.stringify(position)
+        });
+
+        if (res.ok) {
+            alert("Провайдер обновлен");
+            window.location.href = "/position"
+        } else {
+            const data = await res.json();
+            alert(data.error || "Ошибка при обновлении");
+        }
+    } catch (err) {
+        alert("Ошибка: " + err.message);
+    }
+});
+</script>
+{{ end }}
+{{ template "base.html" . }}

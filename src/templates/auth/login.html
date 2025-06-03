@@ -7,7 +7,7 @@
     <input type="password" id="password" name="password"><br><br>
     <input type="submit" value="Войти">
 </form>
-<p>Нет аккаунта? <a href="/create-employee">Зарегистрироваться</a></p>
+<p>Нет аккаунта? Попросите админа его вам создать :3</p>
 
 <script>
 document.getElementById("loginForm").addEventListener("submit", async function(e) {
@@ -28,7 +28,7 @@ document.getElementById("loginForm").addEventListener("submit", async function(e
 
     if (response.ok) {
         alert(result.success || "Успешный вход");
-        // window.location.href = "/"; // редирект при необходимости
+        window.location.href = "/consultation"; // редирект при необходимости
     } else {
         alert(result.error || "Ошибка входа");
     }

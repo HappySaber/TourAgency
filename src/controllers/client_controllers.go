@@ -17,14 +17,14 @@ func NewClientController(service *services.ClientService) *ClientController {
 }
 
 func (cc *ClientController) List(c *gin.Context) {
-	clients, err := cc.service.GetAll() // Изменено на clients
+	clients, err := cc.service.GetAll()
 	if err != nil {
-		c.Set("Error", err)
+		c.HTML(http.StatusInternalServerError, "error", gin.H{"error": "Ошибка загрузки клиентов"})
 		return
 	}
 	c.HTML(http.StatusOK, "client/client", gin.H{
 		"Title":   "Список клиентов",
-		"Clients": clients, // Изменено на "Clients"
+		"Clients": clients,
 	})
 }
 
@@ -38,7 +38,7 @@ func (cc *ClientController) New(c *gin.Context) {
 func (cc *ClientController) GetAll(c *gin.Context) {
 	client, err := cc.service.GetAll()
 	if err != nil {
-		c.HTML(http.StatusInternalServerError, "error", gin.H{"error": "Ошибка загрузки поставщиков"})
+		c.HTML(http.StatusInternalServerError, "error", gin.H{"error": "Ошибка загрузки клиентов"})
 		return
 	}
 
@@ -57,7 +57,7 @@ func (cc *ClientController) GetByID(c *gin.Context) {
 	}
 
 	c.HTML(http.StatusOK, "client_detail", gin.H{
-		"Title":  "Детали поставщика",
+		"Title":  "Детали клиента",
 		"Client": client,
 	})
 }
@@ -96,7 +96,7 @@ func (cc *ClientController) Update(c *gin.Context) {
 	id := c.Param("id")
 	client, err := cc.service.GetByID(id)
 	if err != nil || client == nil {
-		c.HTML(http.StatusNotFound, "error", gin.H{"error": "Поставщик не найден"})
+		c.HTML(http.StatusNotFound, "error", gin.H{"error": "Клиент не найден"})
 		return
 	}
 
@@ -111,7 +111,6 @@ func (cc *ClientController) Update(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{"success": "Client updated successfully"})
-	//c.Redirect(http.StatusSeeOther, "/client")
 }
 
 func (cc *ClientController) Delete(c *gin.Context) {

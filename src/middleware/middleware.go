@@ -2,6 +2,7 @@ package midlleware
 
 import (
 	"TurAgency/src/utils"
+	"net/http"
 
 	"github.com/gin-gonic/gin"
 )
@@ -11,15 +12,16 @@ func IsAuthorized() gin.HandlerFunc {
 		cookie, err := c.Cookie("token")
 
 		if err != nil {
-			c.JSON(401, gin.H{"error": "Couldn't get cookie 'token'"})
+			// Безопасно прерываем обработку, не отправляя других данных
+			c.Redirect(http.StatusSeeOther, "/login")
 			c.Abort()
 			return
 		}
 
 		claims, err := utils.ParseToken(cookie)
-
 		if err != nil {
-			c.JSON(401, gin.H{"error": "Couldn't parse the token: " + err.Error()})
+			// Тоже просто редиректим, не отправляя JSON — иначе возникнет конфликт
+			c.Redirect(http.StatusSeeOther, "/login")
 			c.Abort()
 			return
 		}
@@ -32,7 +34,9 @@ func IsAdmin() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		role, exists := c.Get("role")
 		if !exists || role != "Администратор" {
-			c.JSON(403, gin.H{"error": "Access denied, only admin can do this"})
+
+			// Перенаправляем на главную страницу или другую страницу
+			c.Redirect(http.StatusSeeOther, "/")
 			c.Abort()
 			return
 		}

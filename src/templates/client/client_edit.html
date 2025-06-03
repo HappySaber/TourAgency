@@ -20,6 +20,9 @@
     <label>Телефон:</label><br>
     <input type="tel" id="phonenumber" name="phonenumber" value="{{ .Client.Phonenumber }}" pattern="\d{10}" placeholder="1234567890" required><br><br>
     
+    <label>Паспорт:</label><br>
+    <input type="text" id="passport" name="passport" value="{{ .Client.Passport }}" required><br><br>
+
     <label>Дата рождения:</label><br>
     <input type="date" id="dateofbirth" name="dateofbirth" value="{{ .Client.Dateofbirth.Format "2006-01-02" }}" required><br><br>
     
@@ -37,6 +40,7 @@ document.getElementById("editClientForm").addEventListener("submit", async funct
         middlename: document.getElementById("middlename").value,
         address: document.getElementById("address").value,
         phonenumber: document.getElementById("phonenumber").value,
+        passport: document.getElementById("passport").value,
         dateofbirth: new Date(document.getElementById("dateofbirth").value).toISOString()
     };
     

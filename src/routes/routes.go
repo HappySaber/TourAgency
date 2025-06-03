@@ -33,6 +33,18 @@ func TourAgencyRoutes(r *gin.Engine, db *gorm.DB) {
 
 	serviceService := services.NewServService(db)
 	serviceController := controllers.NewServiceController(serviceService)
+
+	positionService := services.NewPositionService(db)
+	positionController := controllers.NewPositionController(positionService)
+
+	employeeService := services.NewEmployeeService(db)
+	employeeController := controllers.NewEmployeeController(employeeService)
+
+	servicePerConsultationService := services.NewServicePerConsultationService(db)
+	tourPerConsultationService := services.NewTourPerConsultationService(db)
+	servicePerConsultationController := controllers.NewServicePerConsultationController(servicePerConsultationService, serviceService)
+	tourPerConsultationController := controllers.NewTourPerConsultationController(tourPerConsultationService, tourService)
+
 	// Устанавливаем кастомный рендерер
 	r.HTMLRender = renderTemplates()
 
@@ -46,12 +58,13 @@ func TourAgencyRoutes(r *gin.Engine, db *gorm.DB) {
 		})
 	})
 
-	initAuthRoutes(r, authController, db)
+	initAuthRoutes(r, authController, employeeController, db)
 	initTourRoutes(r, tourController, db)
 	initProviderRoutes(r, providerController, db)
-	initConsultationRoutes(r, consulatationController, db)
+	initConsultationRoutes(r, consulatationController, servicePerConsultationController, tourPerConsultationController, db)
 	initClientRoutes(r, clientController, db)
 	initServiceRoutes(r, serviceController, db)
+	initPositionRoutes(r, positionController, db)
 }
 
 func renderTemplates() multitemplate.Renderer {

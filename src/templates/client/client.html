@@ -10,6 +10,7 @@
             <th>Адрес</th>
             <th>Телефон</th>
             <th>Дата рождения</th>
+            <th>Паспорт</th>
             <th>Действия</th>
         </tr>
     </thead>
@@ -22,6 +23,7 @@
             <td>{{ .Address }}</td>
             <td>{{ .Phonenumber }}</td>
             <td>{{ .Dateofbirth.Format "2006-01-02" }}</td>
+            <td>{{ .Passport }}</td>
             <td>
                 <a href="/client/edit/{{ .ID }}">✏️ Редактировать</a>
                 <button onclick="deleteClient('{{ .ID }}')">🗑️ Удалить</button>

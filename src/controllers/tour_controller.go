@@ -69,7 +69,7 @@ func (tc *TourController) New(c *gin.Context) {
 
 func (tc *TourController) Create(c *gin.Context) {
 	var tour models.Tour
-	if err := c.ShouldBind(&tour); err != nil {
+	if err := c.ShouldBindJSON(&tour); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Некорректный ввод"})
 		return
 	}

@@ -15,10 +15,12 @@
     <input type="text" id="address" name="address" required><br><br>
 
     <label>Телефон:</label><br>
-    <!-- Добавьте валидацию для телефона -->
-<input type="tel" id="phonenumber" name="phonenumber" 
+    <input type="tel" id="phonenumber" name="phonenumber" 
        pattern="[0-9]{10}" maxlength="10" required
        title="10 цифр номера без пробелов и спецсимволов"><br><br>
+
+    <label>Паспорт:</label><br>
+    <input type="text" id="passport" name="passport" required><br><br>
 
     <label>Дата рождения:</label><br>
     <input type="date" id="dateofbirth" name="dateofbirth" required><br><br>
@@ -37,7 +39,8 @@ document.getElementById("createClientForm").addEventListener("submit", async fun
             middlename: document.getElementById("middlename").value,
             address: document.getElementById("address").value,
             phonenumber: document.getElementById("phonenumber").value,
-            dateofbirth: new Date(document.getElementById("dateofbirth").value).toISOString()
+            dateofbirth: new Date(document.getElementById("dateofbirth").value).toISOString(),
+            passport: document.getElementById("passport").value,
         };
 
         const res = await fetch("/client/new", {

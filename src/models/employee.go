@@ -20,11 +20,13 @@ type Employee struct {
 	DateOfHiring time.Time `json:"dateofhiring,omitempty" gorm:"column:dateofhiring;type:timestamp"`     // Дата приема на работу
 	PositionID   uuid.UUID `json:"position,omitempty" gorm:"column:position;type:uuid"`                  // Идентификатор должности
 	Password     string    `json:"password" gorm:"column:password;type:varchar(100);not null"`           // Пароль
+
+	Position Position `gorm:"foreignKey:PositionID;references:ID"`
 }
 
 type EmployeeRequest struct {
 	Email    string `json:"email" gorm:"type:varchar(100);unique;not null"`
-	Password string `json:"password" gorm:"-"`
+	Password string `json:"password" gorm:"password"`
 }
 
 type Claims struct {

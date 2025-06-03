@@ -4,6 +4,7 @@ import (
 	"TurAgency/src/models"
 	"TurAgency/src/utils"
 	"errors"
+	"log"
 	"os"
 	"time"
 
@@ -13,34 +14,39 @@ import (
 	"gorm.io/gorm"
 )
 
-var jwtKey = []byte(os.Getenv("JWTKEY"))
-
 type AuthService struct {
-	db *gorm.DB
+	db     *gorm.DB
+	jwtKey []byte
 }
 
 func NewAuthService(db *gorm.DB) *AuthService {
 	return &AuthService{
-		db: db,
+		db:     db,
+		jwtKey: []byte(os.Getenv("JWTKEY")),
 	}
 }
-
 func (as *AuthService) Login(userReq models.EmployeeRequest) (string, error) {
+
 	var user models.Employee
+
+	// Поиск пользователя по email
 	if err := as.db.Where("email = ?", userReq.Email).First(&user).Error; err != nil {
-		return "", errors.New("invalid email or password")
+		return "", errors.New("Неверный email или пароль")
 	}
 
+	// Проверка пароля
 	if !utils.CompareHashPassword(userReq.Password, user.Password) {
-		return "", errors.New("invalid email or password")
+		return "", errors.New("Неверный email или пароль")
 	}
 
+	// Получение роли
 	var position models.Position
 	if err := as.db.First(&position, "id = ?", user.PositionID).Error; err != nil {
-		return "", errors.New("failed to fetch user role")
+		return "", errors.New("Не удалось получить должность пользователя")
 	}
 
-	expirationTime := time.Now().Add(2 * time.Hour)
+	// Создание JWT-токена
+	expirationTime := time.Now().Add(8 * time.Hour)
 	claims := &models.Claims{
 		Role: position.Name,
 		RegisteredClaims: jwt.RegisteredClaims{
@@ -48,11 +54,12 @@ func (as *AuthService) Login(userReq models.EmployeeRequest) (string, error) {
 			ExpiresAt: jwt.NewNumericDate(expirationTime),
 		},
 	}
-
+	log.Println(claims.Role)
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-	tokenString, err := token.SignedString(jwtKey)
+
+	tokenString, err := token.SignedString(as.jwtKey)
 	if err != nil {
-		return "", errors.New("could not create token")
+		return "", errors.New("Не удалось создать токен")
 	}
 
 	return tokenString, nil

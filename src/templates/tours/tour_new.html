@@ -1,27 +1,30 @@
 {{ define "content" }}
 <h2>Добавить тур</h2>
 
-<form action="/tours" method="POST">
+<form id="createTourForm" action="/tours" method="POST">
     <label>Название:</label><br>
-    <input type="text" name="name" required><br><br>
+    <input type="text" id="name" name="name" required><br><br>
 
     <label>Рейтинг:</label><br>
-    <input type="text" name="rating"><br><br>
+    <input type="text" id="rating" name="rating"><br><br>
 
     <label>Отель:</label><br>
-    <input type="text" name="hotel"><br><br>
+    <input type="text" id="hotel" name="hotel"><br><br>
 
     <label>Питание:</label><br>
-    <input type="text" name="nutrition"><br><br>
+    <input type="text" id="nutrition" name="nutrition"><br><br>
 
     <label>Город:</label><br>
-    <input type="text" name="city"><br><br>
+    <input type="text" id="city" name="city"><br><br>
 
     <label>Страна:</label><br>
-    <input type="text" name="country"><br><br>
+    <input type="text" id="country" name="country"><br><br>
+
+    <label>Цена за единицу:</label><br>
+    <input type="text" id="price" name="price"><br><br>
 
     <label>Провайдер:</label><br>
-    <select name="provider" required>
+    <select id="provider" name="provider" required>
         <option value="">-- Выберите провайдера --</option>
         {{ range .Providers }}
         <option value="{{ .ID }}">{{ .Name }}</option>
@@ -31,38 +34,36 @@
     <button type="submit">Создать</button>
 </form>
 
-
 <script>
-    document.getElementById("editTourForm").addEventListener("submit", async function(e) {
+    document.getElementById("createTourForm").addEventListener("submit", async function(e) {
         e.preventDefault();
     
-        const id = document.getElementById("id").value;
-    
-        const provider = {
+        const tour = {
             name: document.getElementById("name").value,
             rating: document.getElementById("rating").value,
             hotel: document.getElementById("hotel").value,
             nutrition: document.getElementById("nutrition").value,
             city: document.getElementById("city").value,
             country: document.getElementById("country").value,
-            provider: document.getElementById("provider").value
+            provider: document.getElementById("provider").value,
+            price: document.getElementById("price").value
         };
     
-        const res = await fetch(`/provider/edit/${id}`, {
+        const res = await fetch(`/tours/new`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(provider)
+            body: JSON.stringify(tour)
         });
     
         if (res.ok) {
-            alert("Обновлено");
+            alert("Тур создан");
             window.location.href = "/tours";
         } else {
             const data = await res.json();
             alert(data.error || "Ошибка");
         }
     });
-    </script>
+</script>
 {{ end }}
 
 {{ template "base.html" }}

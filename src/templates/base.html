@@ -7,18 +7,22 @@
 </head>
 <body>
     <header>
-        <nav>
+        <nav style="display: flex; gap: 10px; align-items: center;">
             <a href="/">Главная</a>
-            <a href="/login">Вход</a>
-            <a href="/create-employee">Регистрация</a>
+            <a href="/employee">Сотрудники</a>
+            <a href="/position">Должности</a>
             <a href="/tours">Туры</a>
             <a href="/provider">Поставщики</a>
             <a href="/client">Клиенты</a>
             <a href="/consultation">Консультации</a>
             <a href="/service">Услуги</a>
+
+            <form action="/logout" method="POST" style="margin: 0;">
+                <button type="submit">Выход</button>
+            </form>
         </nav>
     </header>
-    
-    {{template "content" .}}
+
+    {{ template "content" . }}
 </body>
 </html>

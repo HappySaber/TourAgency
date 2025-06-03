@@ -22,8 +22,13 @@ func (cs *ConsultationService) Create(consultation *models.Consultation) error {
 }
 
 func (cs *ConsultationService) GetAll() ([]models.Consultation, error) {
+
 	var consultations []models.Consultation
-	err := cs.db.Find(&consultations).Error
+	err := cs.db.
+		Preload("Client").
+		Preload("Employee").
+		Find(&consultations).Error
+
 	return consultations, err
 }
 

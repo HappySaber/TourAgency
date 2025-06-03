@@ -2,13 +2,14 @@ package routes
 
 import (
 	"TurAgency/src/controllers"
+	midlleware "TurAgency/src/middleware"
 
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
 )
 
 func initServiceRoutes(r *gin.Engine, serviceCntr *controllers.ServiceController, db *gorm.DB) {
-	service := r.Group("/service")
+	service := r.Group("/service").Use(midlleware.IsAuthorized())
 	{
 		service.GET("/", serviceCntr.List)
 		service.GET("/new", serviceCntr.New)
