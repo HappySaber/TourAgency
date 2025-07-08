@@ -5,10 +5,9 @@ import (
 	midlleware "TurAgency/src/middleware"
 
 	"github.com/gin-gonic/gin"
-	"gorm.io/gorm"
 )
 
-func initPositionRoutes(r *gin.Engine, positionCtrl *controllers.PositionController, db *gorm.DB) {
+func initPositionRoutes(r *gin.Engine, positionCtrl *controllers.PositionController) {
 	positions1 := r.Group("/position").Use(midlleware.IsAuthorized())
 	{
 		positions1.GET("/", positionCtrl.List)

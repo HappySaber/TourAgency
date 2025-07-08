@@ -4,7 +4,6 @@ import (
 	"TurAgency/src/models"
 	"TurAgency/src/utils"
 	"errors"
-	"log"
 	"os"
 	"time"
 
@@ -25,6 +24,7 @@ func NewAuthService(db *gorm.DB) *AuthService {
 		jwtKey: []byte(os.Getenv("JWTKEY")),
 	}
 }
+
 func (as *AuthService) Login(userReq models.EmployeeRequest) (string, error) {
 
 	var user models.Employee
@@ -54,7 +54,7 @@ func (as *AuthService) Login(userReq models.EmployeeRequest) (string, error) {
 			ExpiresAt: jwt.NewNumericDate(expirationTime),
 		},
 	}
-	log.Println(claims.Role)
+
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 
 	tokenString, err := token.SignedString(as.jwtKey)

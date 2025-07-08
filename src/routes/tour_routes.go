@@ -5,10 +5,9 @@ import (
 	midlleware "TurAgency/src/middleware"
 
 	"github.com/gin-gonic/gin"
-	"gorm.io/gorm"
 )
 
-func initTourRoutes(r *gin.Engine, tourCntr *controllers.TourController, db *gorm.DB) {
+func initTourRoutes(r *gin.Engine, tourCntr *controllers.TourController) {
 	tours := r.Group("/tours").Use(midlleware.IsAuthorized())
 	{
 		tours.GET("/", tourCntr.List)

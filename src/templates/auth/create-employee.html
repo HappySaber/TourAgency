@@ -5,7 +5,8 @@
     <input type="email" id="email" name="email" required><br><br>
 
     <label for="password">Пароль:</label><br>
-    <input type="password" id="password" name="password" required><br><br>
+    <input type="password" id="password" name="password" required minlength="6" maxlength="16"><br><br>
+
 
     <label for="firstName">Имя:</label><br>
     <input type="text" id="firstName" name="firstName" required><br><br>
@@ -19,8 +20,9 @@
     <label for="address">Адрес:</label><br>
     <input type="text" id="address" name="address" required><br><br>
 
-    <label for="phoneNumber">Телефон:</label><br>
-    <input type="text" id="phoneNumber" name="phoneNumber"><br><br>
+<label for="phoneNumber">Телефон:</label><br>
+<input type="tel" id="phoneNumber" name="phoneNumber" pattern="[0-9]*" required><br><br>
+
 
     <label for="dateOfBirth">Дата рождения:</label><br>
     <input type="date" id="dateOfBirth" name="dateOfBirth"><br><br>

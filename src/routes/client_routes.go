@@ -5,10 +5,9 @@ import (
 	midlleware "TurAgency/src/middleware"
 
 	"github.com/gin-gonic/gin"
-	"gorm.io/gorm"
 )
 
-func initClientRoutes(r *gin.Engine, clientCtrl *controllers.ClientController, db *gorm.DB) {
+func initClientRoutes(r *gin.Engine, clientCtrl *controllers.ClientController) {
 	clients := r.Group("/client").Use(midlleware.IsAuthorized())
 	{
 		clients.GET("/", clientCtrl.List)

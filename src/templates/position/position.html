@@ -31,7 +31,7 @@
 async function deletePosition(id) {
     if (!confirm("Удалить должность?")) return;
 
-    const res = await fetch(`/position/delete/${id}`, { method: "DELETE" });
+    const res = await fetch(`/position/${id}`, { method: "DELETE" });
 
     if (res.ok) {
         alert("Удалено");

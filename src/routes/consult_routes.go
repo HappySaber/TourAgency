@@ -5,7 +5,6 @@ import (
 	midlleware "TurAgency/src/middleware"
 
 	"github.com/gin-gonic/gin"
-	"gorm.io/gorm"
 )
 
 func initConsultationRoutes(
@@ -13,7 +12,6 @@ func initConsultationRoutes(
 	consultationCtrl *controllers.ConsultationController,
 	servicePerConsultationCtrl *controllers.ServicePerConsultationController,
 	tourPerConsultationCtrl *controllers.TourPerConsultationController,
-	db *gorm.DB,
 ) {
 	consultations := r.Group("/consultation").Use(midlleware.IsAuthorized())
 	{

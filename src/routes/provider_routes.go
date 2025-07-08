@@ -5,10 +5,9 @@ import (
 	midlleware "TurAgency/src/middleware"
 
 	"github.com/gin-gonic/gin"
-	"gorm.io/gorm"
 )
 
-func initProviderRoutes(r *gin.Engine, providerCtrl *controllers.ProviderController, db *gorm.DB) {
+func initProviderRoutes(r *gin.Engine, providerCtrl *controllers.ProviderController) {
 	providers := r.Group("/provider").Use(midlleware.IsAuthorized())
 	{
 		providers.GET("/", providerCtrl.List)

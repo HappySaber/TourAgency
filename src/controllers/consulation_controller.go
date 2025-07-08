@@ -159,7 +159,7 @@ func (cc *ConsultationController) Update(c *gin.Context) {
 		TimeOfConsultation string `json:"timeofconsultation"`
 		ClientID           string `json:"client"`
 		EmployeeID         string `json:"employee"`
-		Notes              string `json:notes`
+		Notes              string `json:"notes"`
 	}
 
 	var input ConsultationInput

@@ -66,7 +66,7 @@ document.getElementById("createClientForm").addEventListener("submit", async fun
         const data = await res.json();
         
         alert(data.message || "Клиент успешно создан");
-        window.location.href = "/client"; // Здесь добавлен редирект на /client
+        window.location.href = "/client"; 
     } catch (err) {
         console.error("Ошибка при создании клиента:", err);
         alert("Ошибка: " + err.message);

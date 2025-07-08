@@ -1,51 +1,82 @@
-body {
-    font-family: Arial, sans-serif;
-    margin: 0;
-    padding: 0;
-    background-color: #f4f4f4;
-}
+    body {
+        font-family: Arial, sans-serif;
+        margin: 20px;
+        background-color: #f7f7f7;
+        color: #333;
+    }
 
-nav {
-    background-color: #333;
-    color: white;
-    padding: 10px;
-    text-align: center;
-}
+    h2 {
+        color: #444;
+        margin-bottom: 20px;
+    }
 
-nav a {
-    color: white;
-    margin: 0 15px;
-    text-decoration: none;
-}
+    table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-bottom: 20px;
+        background-color: #fff;
+    }
 
-main {
-    padding: 20px;
-    max-width: 600px;
-    margin: 0 auto;
-    background-color: white;
-    box-shadow: 0 0 10px rgba(0,0,0,0.1);
-    margin-top: 20px;
-}
+    table th,
+    table td {
+        padding: 10px;
+        border: 1px solid #ccc;
+        text-align: left;
+    }
 
-input[type="text"],
-input[type="email"],
-input[type="password"] {
-    width: 100%;
-    padding: 10px;
-    margin-bottom: 10px;
-    border: 1px solid #ccc;
-    border-radius: 4px;
-}
+    table th {
+        background-color: #eee;
+    }
 
-button {
-    padding: 10px 20px;
-    background-color: #28a745;
-    color: white;
-    border: none;
-    border-radius: 4px;
-    cursor: pointer;
-}
+    form {
+        background-color: #fff;
+        padding: 20px;
+        border: 1px solid #ddd;
+        max-width: 600px;
+        margin-bottom: 20px;
+    }
 
-button:hover {
-    background-color: #218838;
-}
+    label {
+        display: block;
+        margin-top: 10px;
+        font-weight: bold;
+    }
+
+    input[type="text"],
+    input[type="date"],
+    input[type="time"],
+    select {
+        width: 100%;
+        padding: 8px;
+        margin-top: 4px;
+        margin-bottom: 12px;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+        box-sizing: border-box;
+    }
+
+    input[type="submit"],
+    button {
+        background-color: #4CAF50;
+        color: white;
+        padding: 10px 16px;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        font-weight: bold;
+    }
+
+    input[type="submit"]:hover,
+    button:hover {
+        background-color: #45a049;
+    }
+
+    a {
+        color: #2196F3;
+        text-decoration: none;
+        font-weight: bold;
+    }
+
+    a:hover {
+        text-decoration: underline;
+    }

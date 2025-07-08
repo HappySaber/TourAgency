@@ -19,8 +19,8 @@
     <label>Адрес:</label><br>
     <input type="text" id="address" name="address" value="{{ .Employee.Address }}" required><br><br>
 
-    <label>Телефон:</label><br>
-    <input type="text" id="phoneNumber" name="phoneNumber" value="{{ .Employee.PhoneNumber }}"><br><br>
+<label for="phoneNumber">Телефон:</label><br>
+<input type="tel" id="phoneNumber" name="phoneNumber" pattern="[0-9]*" value="{{ .Employee.PhoneNumber }}"><br><br>
 
     <label>Дата рождения:</label><br>
     <input type="date" id="dateOfBirth" name="dateOfBirth" value="{{ if .Employee.DateOfBirth }}{{ .Employee.DateOfBirth.Format "2006-01-02" }}{{ end }}"><br><br>

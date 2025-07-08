@@ -58,13 +58,13 @@ func TourAgencyRoutes(r *gin.Engine, db *gorm.DB) {
 		})
 	})
 
-	initAuthRoutes(r, authController, employeeController, db)
-	initTourRoutes(r, tourController, db)
-	initProviderRoutes(r, providerController, db)
-	initConsultationRoutes(r, consulatationController, servicePerConsultationController, tourPerConsultationController, db)
-	initClientRoutes(r, clientController, db)
-	initServiceRoutes(r, serviceController, db)
-	initPositionRoutes(r, positionController, db)
+	initAuthRoutes(r, authController, employeeController)
+	initTourRoutes(r, tourController)
+	initProviderRoutes(r, providerController)
+	initConsultationRoutes(r, consulatationController, servicePerConsultationController, tourPerConsultationController)
+	initClientRoutes(r, clientController)
+	initServiceRoutes(r, serviceController)
+	initPositionRoutes(r, positionController)
 }
 
 func renderTemplates() multitemplate.Renderer {

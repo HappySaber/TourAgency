@@ -5,10 +5,9 @@ import (
 	midlleware "TurAgency/src/middleware"
 
 	"github.com/gin-gonic/gin"
-	"gorm.io/gorm"
 )
 
-func initServiceRoutes(r *gin.Engine, serviceCntr *controllers.ServiceController, db *gorm.DB) {
+func initServiceRoutes(r *gin.Engine, serviceCntr *controllers.ServiceController) {
 	service := r.Group("/service").Use(midlleware.IsAuthorized())
 	{
 		service.GET("/", serviceCntr.List)
