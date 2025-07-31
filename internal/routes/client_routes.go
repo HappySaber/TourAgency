@@ -1,0 +1,20 @@
+package routes
+
+import (
+	"TurAgency/internal/controllers"
+	midlleware "TurAgency/internal/middleware"
+
+	"github.com/gin-gonic/gin"
+)
+
+func initClientRoutes(r *gin.Engine, clientCtrl *controllers.ClientController) {
+	clients := r.Group("/client").Use(midlleware.IsAuthorized())
+	{
+		clients.GET("/", clientCtrl.List)
+		clients.GET("/new", clientCtrl.New)
+		clients.POST("/new", clientCtrl.Create)
+		clients.GET("/edit/:id", clientCtrl.Edit)
+		clients.PUT("/edit/:id", clientCtrl.Update)
+		clients.DELETE("/:id", clientCtrl.Delete)
+	}
+}
