@@ -70,7 +70,7 @@ func TourAgencyRoutes(r *gin.Engine, db *gorm.DB) {
 func renderTemplates() multitemplate.Renderer {
 	render := multitemplate.NewRenderer()
 
-	templatesDir := "internal/templates"
+	templatesDir := "web/templates"
 	baseLayout := filepath.Join(templatesDir, "base.html")
 
 	err := filepath.Walk(templatesDir, func(path string, info os.FileInfo, err error) error {

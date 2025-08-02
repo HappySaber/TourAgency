@@ -1,13 +1,11 @@
 package database
 
 import (
-	"database/sql"
 	"fmt"
 	"log"
 	"os"
 	"strconv"
 
-	"github.com/pressly/goose/v3"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 )
@@ -39,7 +37,7 @@ func buildDBConfig() *DBConfig {
 
 func (config *DBConfig) dsn() string {
 	return fmt.Sprintf(
-		"host=%s port=%d user=%s password=%s dbname=%s sadslmode=disable",
+		"host=%s port=%d user=%s password=%s dbname=%s sslmode=disable",
 		config.Host, config.Port, config.User, config.Password, config.DBName,
 	)
 }
@@ -56,27 +54,27 @@ func Init() *gorm.DB {
 	log.Println("Connected to the database (GORM)")
 
 	// Получение *sql.DB для goose
-	sqlDB, err := DB.DB()
-	if err != nil {
-		log.Fatalf("Failed to get sql.DB from gorm.DB: %v", err)
-	}
+	// sqlDB, err := DB.DB()
+	// if err != nil {
+	// 	log.Fatalf("Failed to get sql.DB from gorm.DB: %v", err)
+	// }
 
 	// Применение миграций через goose
-	if err := runMigrations(sqlDB); err != nil {
-		log.Fatalf("Migration failed: %v", err)
-	}
+	// if err := runMigrations(sqlDB); err != nil {
+	// 	log.Fatalf("Migration failed: %v", err)
+	// }
 
 	return DB
 }
 
-func runMigrations(db *sql.DB) error {
-	migrationsDir := "internal/migrations"
+// func runMigrations(db *sql.DB) error {
+// 	migrationsDir := "internal/migrations"
 
-	log.Println("Running migrations with Goose...")
-	if err := goose.Up(db, migrationsDir); err != nil {
-		return fmt.Errorf("goose migration failed: %w", err)
-	}
+// 	log.Println("Running migrations with Goose...")
+// 	if err := goose.Up(db, migrationsDir); err != nil {
+// 		return fmt.Errorf("goose migration failed: %w", err)
+// 	}
 
-	log.Println("Goose migrations applied successfully")
-	return nil
-}
+// 	log.Println("Goose migrations applied successfully")
+// 	return nil
+// }
