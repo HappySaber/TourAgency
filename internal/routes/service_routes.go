@@ -7,7 +7,7 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func initServiceRoutes(r *gin.Engine, serviceCntr *controllers.ServiceController) {
+func initServiceRoutes(r *gin.RouterGroup, serviceCntr *controllers.ServiceController) {
 	service := r.Group("/service").Use(midlleware.IsAuthorized())
 	{
 		service.GET("/", serviceCntr.List)

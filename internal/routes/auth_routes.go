@@ -7,16 +7,14 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func initAuthRoutes(r *gin.Engine, authCtrl *controllers.AuthController, emplCtrl *controllers.EmployeeController) {
-	r.GET("/login", authCtrl.LoginPage)
+func initAuthRoutes(r *gin.RouterGroup, authCtrl *controllers.AuthController, emplCtrl *controllers.EmployeeController) {
 	r.POST("/login", authCtrl.Login)
 	auth := r.Group("/employee").Use(middleware.IsAuthorized(), middleware.IsAdmin())
 	{
 		auth.GET("/", emplCtrl.List)
-		auth.GET("/edit/:id", emplCtrl.Edit)
-		auth.PUT("/edit/:id", emplCtrl.Update)
-		auth.GET("/new", authCtrl.CreateEmployeePage)
-		auth.POST("/new", authCtrl.CreateNewEmployee)
+		auth.GET("/employeeEdit/:id", emplCtrl.Edit)
+		auth.PUT("/employeeEdit/:id", emplCtrl.Update)
+		auth.POST("/employeeCreate", authCtrl.CreateNewEmployee)
 		auth.POST("/logout", authCtrl.Logout)
 	}
 }

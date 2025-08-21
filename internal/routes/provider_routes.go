@@ -7,7 +7,7 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func initProviderRoutes(r *gin.Engine, providerCtrl *controllers.ProviderController) {
+func initProviderRoutes(r *gin.RouterGroup, providerCtrl *controllers.ProviderController) {
 	providers := r.Group("/provider").Use(midlleware.IsAuthorized())
 	{
 		providers.GET("/", providerCtrl.List)

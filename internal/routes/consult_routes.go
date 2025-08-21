@@ -8,7 +8,7 @@ import (
 )
 
 func initConsultationRoutes(
-	r *gin.Engine,
+	r *gin.RouterGroup,
 	consultationCtrl *controllers.ConsultationController,
 	servicePerConsultationCtrl *controllers.ServicePerConsultationController,
 	tourPerConsultationCtrl *controllers.TourPerConsultationController,

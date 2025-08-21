@@ -16,109 +16,71 @@ func NewPositionController(service *services.PositionService) *PositionControlle
 	return &PositionController{service}
 }
 
-func (cc *PositionController) List(c *gin.Context) {
+// Получить все должности
+func (cc *PositionController) GetAll(c *gin.Context) {
 	positions, err := cc.service.GetAll()
 	if err != nil {
-		c.HTML(http.StatusInternalServerError, "error", gin.H{"error": "Ошибка загрузки клиентов"})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Ошибка загрузки должностей"})
 		return
 	}
-	c.HTML(http.StatusOK, "position/position", gin.H{
-		"Title":     "Список должностей",
-		"Positions": positions,
-	})
+	c.JSON(http.StatusOK, positions)
 }
 
-// New отображает форму создания нового поставщика
-func (cc *PositionController) New(c *gin.Context) {
-	c.HTML(http.StatusOK, "position/position_new", gin.H{
-		"Title": "Создание нового клиента",
-	})
-}
-
-func (cc *PositionController) GetAll(c *gin.Context) {
-	position, err := cc.service.GetAll()
-	if err != nil {
-		c.HTML(http.StatusInternalServerError, "error", gin.H{"error": "Ошибка загрузки клиентов"})
-		return
-	}
-
-	c.HTML(http.StatusOK, "position", gin.H{
-		"Title":     "Список должностей",
-		"Positions": position,
-	})
-}
-
+// Получить должность по ID
 func (cc *PositionController) GetByID(c *gin.Context) {
 	id := c.Param("id")
 	position, err := cc.service.GetByID(id)
 	if err != nil || position == nil {
-		c.HTML(http.StatusNotFound, "error", gin.H{"error": "Клиент не найден"})
+		c.JSON(http.StatusNotFound, gin.H{"error": "Должность не найдена"})
 		return
 	}
-
-	c.HTML(http.StatusOK, "position_detail", gin.H{
-		"Title":    "Детали клиента",
-		"Position": position,
-	})
+	c.JSON(http.StatusOK, position)
 }
 
+// Создать новую должность
 func (cc *PositionController) Create(c *gin.Context) {
 	var position models.Position
 	if err := c.ShouldBindJSON(&position); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Ошибка формы"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Некорректные данные"})
 		return
 	}
 
 	if err := cc.service.Create(&position); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Ошибка при создании клиента"})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Ошибка при создании должности"})
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"success": "Клиент создан"})
-
+	c.JSON(http.StatusCreated, position)
 }
 
-// Edit отображает форму редактирования поставщика
-func (cc *PositionController) Edit(c *gin.Context) {
-	id := c.Param("id")
-	position, err := cc.service.GetByID(id)
-	if err != nil {
-		c.Set("Error", err)
-		return
-	}
-	c.HTML(http.StatusOK, "position/position_edit", gin.H{
-		"Title":    "Редактирование поставщика",
-		"Position": position,
-	})
-}
-
+// Обновить должность
 func (cc *PositionController) Update(c *gin.Context) {
 	id := c.Param("id")
 	position, err := cc.service.GetByID(id)
 	if err != nil || position == nil {
-		c.HTML(http.StatusNotFound, "error", gin.H{"error": "Клиент не найден"})
+		c.JSON(http.StatusNotFound, gin.H{"error": "Должность не найдена"})
 		return
 	}
 
-	if err := c.ShouldBind(position); err != nil {
-		c.HTML(http.StatusBadRequest, "error", gin.H{"error": "Ошибка формы"})
+	if err := c.ShouldBindJSON(position); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Некорректные данные"})
 		return
 	}
 
 	if err := cc.service.Update(position); err != nil {
-		c.HTML(http.StatusInternalServerError, "error", gin.H{"error": "Ошибка при обновлении поставщика"})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Ошибка при обновлении должности"})
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"success": "Position updated successfully"})
+	c.JSON(http.StatusOK, position)
 }
 
+// Удалить должность
 func (cc *PositionController) Delete(c *gin.Context) {
 	id := c.Param("id")
 	if err := cc.service.Delete(id); err != nil {
-		c.HTML(http.StatusInternalServerError, "error", gin.H{"error": "Ошибка при удалении поставщика"})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Ошибка при удалении должности"})
 		return
 	}
-
-	c.JSON(http.StatusOK, gin.H{"success": "Position deleted successfully"})
+	c.JSON(http.StatusOK, gin.H{"success": "Должность удалена"})
 }

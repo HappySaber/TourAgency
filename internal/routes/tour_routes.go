@@ -7,7 +7,7 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func initTourRoutes(r *gin.Engine, tourCntr *controllers.TourController) {
+func initTourRoutes(r *gin.RouterGroup, tourCntr *controllers.TourController) {
 	tours := r.Group("/tours").Use(midlleware.IsAuthorized())
 	{
 		tours.GET("/", tourCntr.List)

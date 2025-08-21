@@ -3,18 +3,24 @@ package routes
 import (
 	"TurAgency/internal/controllers"
 	"TurAgency/internal/services"
-	"log"
-	"net/http"
-	"os"
 	"path/filepath"
-	"strings"
+	"time"
 
-	"github.com/gin-contrib/multitemplate"
+	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
 )
 
 func TourAgencyRoutes(r *gin.Engine, db *gorm.DB) {
+	// CORS для React dev-сервера
+	r.Use(cors.New(cors.Config{
+		AllowOrigins:     []string{"http://localhost:5173"}, // Vite порт по умолчанию
+		AllowMethods:     []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
+		AllowHeaders:     []string{"Origin", "Content-Type", "Authorization"},
+		ExposeHeaders:    []string{"Content-Length"},
+		AllowCredentials: true,
+		MaxAge:           12 * time.Hour,
+	}))
 
 	authService := services.NewAuthService(db)
 	authController := controllers.NewAuthController(authService)
@@ -45,62 +51,24 @@ func TourAgencyRoutes(r *gin.Engine, db *gorm.DB) {
 	servicePerConsultationController := controllers.NewServicePerConsultationController(servicePerConsultationService, serviceService)
 	tourPerConsultationController := controllers.NewTourPerConsultationController(tourPerConsultationService, tourService)
 
-	// Устанавливаем кастомный рендерер
-	r.HTMLRender = renderTemplates()
-
-	// Подключение статики
-	r.Static("/internal/static", "./static")
-
-	// Главная страница
-	r.GET("/", func(c *gin.Context) {
-		c.HTML(http.StatusOK, "index", gin.H{
-			"Title": "Главная",
-		})
-	})
-
-	initAuthRoutes(r, authController, employeeController)
-	initTourRoutes(r, tourController)
-	initProviderRoutes(r, providerController)
-	initConsultationRoutes(r, consulatationController, servicePerConsultationController, tourPerConsultationController)
-	initClientRoutes(r, clientController)
-	initServiceRoutes(r, serviceController)
-	initPositionRoutes(r, positionController)
-}
-
-func renderTemplates() multitemplate.Renderer {
-	render := multitemplate.NewRenderer()
-
-	templatesDir := "web/templates"
-	baseLayout := filepath.Join(templatesDir, "base.html")
-
-	err := filepath.Walk(templatesDir, func(path string, info os.FileInfo, err error) error {
-		if err != nil {
-			return err
-		}
-
-		// Пропускаем директории и base.html
-		if info.IsDir() || filepath.Base(path) == "base.html" {
-			return nil
-		}
-
-		if filepath.Ext(path) == ".html" {
-			// Уникальное имя шаблона по относительному пути (например, "providers/list")
-			relativePath, err := filepath.Rel(templatesDir, path)
-			if err != nil {
-				return err
-			}
-
-			// Убираем .html и заменяем \ на /
-			name := strings.TrimSuffix(relativePath, filepath.Ext(relativePath))
-			name = filepath.ToSlash(name)
-
-			render.AddFromFiles(name, baseLayout, path)
-		}
-		return nil
-	})
-
-	if err != nil {
-		log.Fatalf("Ошибка при загрузке шаблонов: %v", err)
+	// === API ===
+	api := r.Group("/api")
+	{
+		initAuthRoutes(api, authController, employeeController)
+		initTourRoutes(api, tourController)
+		initProviderRoutes(api, providerController)
+		initConsultationRoutes(api, consulatationController, servicePerConsultationController, tourPerConsultationController)
+		initClientRoutes(api, clientController)
+		initServiceRoutes(api, serviceController)
+		initPositionRoutes(api, positionController)
 	}
-	return render
+
+	// === React build ===
+	// Отдаём статические файлы из папки React build
+	r.Static("/assets", filepath.Join("web", "frontend", "dist", "assets"))
+
+	// Обработка всех остальных запросов через index.html
+	r.NoRoute(func(c *gin.Context) {
+		c.File(filepath.Join("web", "frontend", "dist", "index.html"))
+	})
 }
