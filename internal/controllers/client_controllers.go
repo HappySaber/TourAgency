@@ -1,124 +1,128 @@
 package controllers
 
 import (
+	"TurAgency/internal/audit"
 	"TurAgency/internal/models"
 	"TurAgency/internal/services"
+	"log"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
 )
 
 type ClientController struct {
-	service *services.ClientService
+	service     *services.ClientService
+	auditLogger audit.Logger
 }
 
-func NewClientController(service *services.ClientService) *ClientController {
-	return &ClientController{service}
+func NewClientController(service *services.ClientService, al audit.Logger) *ClientController {
+	return &ClientController{
+		service:     service,
+		auditLogger: al,
+	}
 }
 
+// GET /clients
 func (cc *ClientController) List(c *gin.Context) {
 	clients, err := cc.service.GetAll()
 	if err != nil {
-		c.HTML(http.StatusInternalServerError, "error", gin.H{"error": "Ошибка загрузки клиентов"})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Ошибка загрузки клиентов"})
 		return
 	}
-	c.HTML(http.StatusOK, "client/client", gin.H{
-		"Title":   "Список клиентов",
-		"Clients": clients,
-	})
+	c.JSON(http.StatusOK, clients)
 }
 
-// New отображает форму создания нового поставщика
-func (cc *ClientController) New(c *gin.Context) {
-	c.HTML(http.StatusOK, "client/client_new", gin.H{
-		"Title": "Создание нового клиента",
-	})
-}
-
-func (cc *ClientController) GetAll(c *gin.Context) {
-	client, err := cc.service.GetAll()
-	if err != nil {
-		c.HTML(http.StatusInternalServerError, "error", gin.H{"error": "Ошибка загрузки клиентов"})
-		return
-	}
-
-	c.HTML(http.StatusOK, "client", gin.H{
-		"Title":   "Список клиентов",
-		"Clients": client,
-	})
-}
-
+// GET /clients/:id
 func (cc *ClientController) GetByID(c *gin.Context) {
 	id := c.Param("id")
 	client, err := cc.service.GetByID(id)
 	if err != nil || client == nil {
-		c.HTML(http.StatusNotFound, "error", gin.H{"error": "Клиент не найден"})
+		c.JSON(http.StatusNotFound, gin.H{"error": "Клиент не найден"})
 		return
 	}
-
-	c.HTML(http.StatusOK, "client_detail", gin.H{
-		"Title":  "Детали клиента",
-		"Client": client,
-	})
+	c.JSON(http.StatusOK, client)
 }
 
+// POST /clients
 func (cc *ClientController) Create(c *gin.Context) {
 	var client models.Client
 	if err := c.ShouldBindJSON(&client); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Ошибка формы"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Неверные данные"})
 		return
 	}
 
-	if err := cc.service.Create(&client); err != nil {
+	evt, err := cc.service.Create(c.Request.Context(), &client)
+	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Ошибка при создании клиента"})
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"success": "Клиент создан"})
+	evt.ActorID = c.GetString("user_id")
+	evt.CorrelationID = c.GetHeader("X-Request-ID")
+	evt.IP = c.ClientIP()
+	evt.UserAgent = c.Request.UserAgent()
 
-}
-
-// Edit отображает форму редактирования поставщика
-func (cc *ClientController) Edit(c *gin.Context) {
-	id := c.Param("id")
-	client, err := cc.service.GetByID(id)
-	if err != nil {
-		c.Set("Error", err)
-		return
+	if err := cc.auditLogger.Log(c.Request.Context(), *evt); err != nil {
+		log.Printf("failed to write audit log: %v", err)
 	}
-	c.HTML(http.StatusOK, "client/client_edit", gin.H{
-		"Title":  "Редактирование поставщика",
-		"Client": client,
-	})
+
+	c.JSON(http.StatusCreated, client)
 }
 
+// PUT /clients/:id
+// PUT /clients/:id
 func (cc *ClientController) Update(c *gin.Context) {
 	id := c.Param("id")
 	client, err := cc.service.GetByID(id)
 	if err != nil || client == nil {
-		c.HTML(http.StatusNotFound, "error", gin.H{"error": "Клиент не найден"})
+		c.JSON(http.StatusNotFound, gin.H{"error": "Клиент не найден"})
 		return
 	}
 
-	if err := c.ShouldBind(client); err != nil {
-		c.HTML(http.StatusBadRequest, "error", gin.H{"error": "Ошибка формы"})
+	if err := c.ShouldBindJSON(client); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Неверные данные"})
 		return
 	}
 
-	if err := cc.service.Update(client); err != nil {
-		c.HTML(http.StatusInternalServerError, "error", gin.H{"error": "Ошибка при обновлении поставщика"})
+	evt, err := cc.service.Update(c.Request.Context(), client)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Ошибка при обновлении клиента"})
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"success": "Client updated successfully"})
+	// Заполняем дополнительные поля события
+	evt.ActorID = c.GetString("user_id")
+	evt.CorrelationID = c.GetHeader("X-Request-ID")
+	evt.IP = c.ClientIP()
+	evt.UserAgent = c.Request.UserAgent()
+
+	if err := cc.auditLogger.Log(c.Request.Context(), *evt); err != nil {
+		log.Printf("failed to write audit log: %v", err)
+	}
+
+	c.JSON(http.StatusOK, client)
 }
 
+// DELETE /clients/:id
 func (cc *ClientController) Delete(c *gin.Context) {
 	id := c.Param("id")
-	if err := cc.service.Delete(id); err != nil {
-		c.HTML(http.StatusInternalServerError, "error", gin.H{"error": "Ошибка при удалении поставщика"})
+	var evt *audit.Event
+	var err error
+	if evt, err = cc.service.Delete(c.Request.Context(), id); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Ошибка при удалении клиента"})
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"success": "Client deleted successfully"})
+	evt = &audit.Event{
+		ActorID:       c.GetString("user_id"),
+		CorrelationID: c.GetHeader("X-Request-ID"),
+		IP:            c.ClientIP(),
+		UserAgent:     c.Request.UserAgent(),
+	}
+
+	if err := cc.auditLogger.Log(c.Request.Context(), *evt); err != nil {
+		log.Printf("failed to write audit log: %v", err)
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "Клиент удалён"})
 }

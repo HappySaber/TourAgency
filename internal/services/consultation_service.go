@@ -1,10 +1,12 @@
 package services
 
 import (
+	"TurAgency/internal/audit"
 	"TurAgency/internal/models"
+	"context"
 	"errors"
+	"time"
 
-	"github.com/google/uuid"
 	"gorm.io/gorm"
 )
 
@@ -16,9 +18,19 @@ func NewConsultationService(db *gorm.DB) *ConsultationService {
 	return &ConsultationService{db: db}
 }
 
-func (cs *ConsultationService) Create(consultation *models.Consultation) error {
-	consultation.ID = uuid.New()
-	return cs.db.Create(consultation).Error
+func (cs *ConsultationService) Create(ctx context.Context, consultation *models.Consultation) (*audit.Event, error) {
+	if err := cs.db.WithContext(ctx).Create(consultation).Error; err != nil {
+		return nil, err
+	}
+
+	evt := &audit.Event{
+		Event:    "consultation.created",
+		Entity:   "client",
+		EntityID: consultation.ID.String(),
+		At:       time.Now(),
+		After:    audit.MustMarshal(consultation),
+	}
+	return evt, nil
 }
 
 func (cs *ConsultationService) GetAll() ([]models.Consultation, error) {
@@ -41,12 +53,44 @@ func (cs *ConsultationService) GetByID(id string) (*models.Consultation, error) 
 	return &consultation, err
 }
 
-func (cs *ConsultationService) Update(updated *models.Consultation) error {
-	return cs.db.Save(updated).Error
+func (cs *ConsultationService) Update(ctx context.Context, updated *models.Consultation) (*audit.Event, error) {
+	var before models.Consultation
+	if err := cs.db.WithContext(ctx).First(&before, "id = ?", updated.ID).Error; err != nil {
+		return nil, err
+	}
+
+	if err := cs.db.WithContext(ctx).Save(updated).Error; err != nil {
+		return nil, err
+	}
+	evt := &audit.Event{
+		Event:    "consultation.updated",
+		Entity:   "consultation",
+		EntityID: updated.ID.String(),
+		At:       time.Now(),
+		Before:   audit.MustMarshal(&before),
+		After:    audit.MustMarshal(updated),
+	}
+	return evt, nil
 }
 
-func (cs *ConsultationService) Delete(id string) error {
-	return cs.db.Delete(&models.Consultation{}, "id = ?", id).Error
+func (cs *ConsultationService) Delete(ctx context.Context, id string) (*audit.Event, error) {
+	var before models.Consultation
+	if err := cs.db.WithContext(ctx).First(&before, "id = ?", id).Error; err != nil {
+		return nil, err
+	}
+
+	if err := cs.db.WithContext(ctx).Delete(&models.Consultation{}, "id = ?", id).Error; err != nil {
+		return nil, err
+	}
+	evt := &audit.Event{
+		Event:    "consultation.deleted",
+		Entity:   "consultation",
+		EntityID: id,
+		At:       time.Now(),
+		Before:   audit.MustMarshal(&before),
+		After:    audit.MustMarshal(nil),
+	}
+	return evt, nil
 }
 
 func (cs *ConsultationService) GetAllClients() ([]models.Client, error) {

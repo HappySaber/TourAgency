@@ -11,11 +11,11 @@ import (
 )
 
 type ServiceWithCheck struct {
-	ID       uint
-	Name     string
-	Discount string
-	Quantity string
-	Checked  bool
+	ID       uint   `json:"id"`
+	Name     string `json:"name"`
+	Discount string `json:"discount"`
+	Quantity string `json:"quantity"`
+	Checked  bool   `json:"checked"`
 }
 
 type ServicePerConsultationController struct {
@@ -26,42 +26,53 @@ type ServicePerConsultationController struct {
 func NewServicePerConsultationController(svc *services.ServicePerConsultationService, allSvc *services.ServService) *ServicePerConsultationController {
 	return &ServicePerConsultationController{svc, allSvc}
 }
-func (c *ServicePerConsultationController) EditPage(ctx *gin.Context) {
+
+// GetForConsultation возвращает все услуги для консультации с флагом выбора
+func (c *ServicePerConsultationController) GetForConsultation(ctx *gin.Context) {
 	idStr := ctx.Param("id")
-	id, err := uuid.Parse(idStr)
+	consultationID, err := uuid.Parse(idStr)
 	if err != nil {
-		ctx.HTML(http.StatusBadRequest, "error", gin.H{"error": "Неверный ID консультации"})
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": "Неверный ID консультации"})
 		return
 	}
 
-	current, _ := c.service.GetByConsultationID(id) // []models.ServicePerConsultation
-	all, _ := c.allSvc.GetAll()
+	current, err := c.service.GetByConsultationID(consultationID)
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "Ошибка при получении услуг"})
+		return
+	}
 
-	// Создаём мапу для быстрого доступа по ID
+	all, err := c.allSvc.GetAll()
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "Ошибка при получении всех услуг"})
+		return
+	}
+
+	// Мапа для быстрого поиска
 	currentMap := make(map[uint]models.ServicePerConsultation)
-	for _, item := range current {
-		currentMap[item.ServiceID] = item
+	for _, s := range current {
+		currentMap[s.ServiceID] = s
 	}
 
 	var servicesWithCheck []ServiceWithCheck
 	for _, s := range all {
 		item, checked := currentMap[s.ID]
-
 		servicesWithCheck = append(servicesWithCheck, ServiceWithCheck{
 			ID:       s.ID,
 			Name:     s.Name,
 			Checked:  checked,
-			Discount: item.Discount, // пустая строка если не найдено
-			Quantity: item.Quantity, // пустая строка если не найдено
+			Discount: item.Discount,
+			Quantity: item.Quantity,
 		})
 	}
 
-	ctx.HTML(http.StatusOK, "consultation/consultation_services_add", gin.H{
-		"ConsultationID": id,
-		"AllServices":    servicesWithCheck,
+	ctx.JSON(http.StatusOK, gin.H{
+		"consultation_id": consultationID,
+		"services":        servicesWithCheck,
 	})
 }
 
+// Update обновляет выбранные услуги для консультации
 func (c *ServicePerConsultationController) Update(ctx *gin.Context) {
 	idStr := ctx.Param("id")
 	consultationID, err := uuid.Parse(idStr)
@@ -70,20 +81,33 @@ func (c *ServicePerConsultationController) Update(ctx *gin.Context) {
 		return
 	}
 
-	form := ctx.PostFormArray("services")
+	// Читаем данные формы
+	form := ctx.Request.PostForm
+	serviceIDs := form["services"]
+
+	formData := make(map[string]string)
+	for k, v := range form {
+		if len(v) > 0 {
+			formData[k] = v[0]
+		}
+	}
+
 	var ids []uint
-	for _, s := range form {
+	for _, s := range serviceIDs {
 		id, err := strconv.ParseUint(s, 10, 64)
 		if err == nil {
 			ids = append(ids, uint(id))
 		}
 	}
 
-	err = c.service.UpdateServicesForConsultation(consultationID, ids, ctx)
+	events, err := c.service.UpdateServicesForConsultation(ctx.Request.Context(), consultationID, ids, formData)
 	if err != nil {
-		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "Ошибка при обновлении"})
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "Ошибка при обновлении услуг"})
 		return
 	}
 
-	ctx.Redirect(http.StatusSeeOther, "/consultation")
+	ctx.JSON(http.StatusOK, gin.H{
+		"success": "Услуги для консультации обновлены",
+		"events":  events, // можно вернуть события аудита, если нужно
+	})
 }

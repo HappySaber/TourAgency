@@ -4,6 +4,7 @@ import (
 	"TurAgency/internal/models"
 	"TurAgency/internal/services"
 	"net/http"
+	"time"
 
 	"github.com/gin-gonic/gin"
 )
@@ -46,6 +47,30 @@ func (ac *AuthController) CreateNewEmployee(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{"success": "User created successfully"})
+}
+
+func (ac *AuthController) DummyLoginController(c *gin.Context) {
+	var user models.Employee
+
+	// Читаем JSON
+	if err := c.ShouldBindJSON(&user); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	// Вызываем сервис
+	tokenString, err := ac.service.DummyLoginService(user)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	// Ставим куку
+	expirationTime := time.Now().Add(30 * time.Minute)
+	c.SetCookie("token", tokenString, int(expirationTime.Unix()), "/", "localhost", false, true)
+
+	// Ответ клиенту
+	c.JSON(http.StatusOK, gin.H{"success": "user logged in by dummyLogin"})
 }
 
 func (ac *AuthController) Logout(c *gin.Context) {

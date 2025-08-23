@@ -1,6 +1,9 @@
 package audit
 
-import "time"
+import (
+	"encoding/json"
+	"time"
+)
 
 type Event struct {
 	EventID       string    `json:"event_id"`
@@ -17,3 +20,15 @@ type Event struct {
 }
 
 type jsonRaw []byte
+
+func MustMarshal(v interface{}) jsonRaw {
+	if v == nil {
+		return nil
+	}
+	b, err := json.Marshal(v)
+	if err != nil {
+		// логировать можно здесь, если хочешь
+		return nil
+	}
+	return jsonRaw(b)
+}

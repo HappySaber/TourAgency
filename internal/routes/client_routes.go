@@ -11,9 +11,7 @@ func initClientRoutes(r *gin.RouterGroup, clientCtrl *controllers.ClientControll
 	clients := r.Group("/client").Use(midlleware.IsAuthorized())
 	{
 		clients.GET("/", clientCtrl.List)
-		clients.GET("/new", clientCtrl.New)
 		clients.POST("/new", clientCtrl.Create)
-		clients.GET("/edit/:id", clientCtrl.Edit)
 		clients.PUT("/edit/:id", clientCtrl.Update)
 		clients.DELETE("/:id", clientCtrl.Delete)
 	}

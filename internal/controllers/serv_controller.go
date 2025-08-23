@@ -1,8 +1,10 @@
 package controllers
 
 import (
+	"TurAgency/internal/audit"
 	"TurAgency/internal/models"
 	"TurAgency/internal/services"
+	"log"
 	"net/http"
 	"strconv"
 
@@ -10,88 +12,72 @@ import (
 )
 
 type ServiceController struct {
-	service *services.ServService
+	service     *services.ServService
+	auditLogger audit.Logger
 }
 
-func NewServiceController(service *services.ServService) *ServiceController {
-	return &ServiceController{service}
+func NewServiceController(service *services.ServService, al audit.Logger) *ServiceController {
+	return &ServiceController{
+		service:     service,
+		auditLogger: al,
+	}
 }
 
-// List отображает список услуг
+// List возвращает все услуги
 func (sc *ServiceController) List(c *gin.Context) {
 	services, err := sc.service.GetAll()
 	if err != nil {
-		c.HTML(http.StatusInternalServerError, "error", gin.H{"error": "Не удалось загрузить услуги"})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Не удалось загрузить услуги"})
 		return
 	}
 
-	c.HTML(http.StatusOK, "service/service", gin.H{
-		"Title":    "Список услуг",
-		"Services": services,
-	})
+	c.JSON(http.StatusOK, services)
 }
 
+// GetByID возвращает услугу по ID
 func (sc *ServiceController) GetByID(c *gin.Context) {
 	id, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
-		c.HTML(http.StatusBadRequest, "error", gin.H{"error": "Некорректный ID"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Некорректный ID"})
 		return
 	}
 
 	service, err := sc.service.GetByID(id)
 	if err != nil || service == nil {
-		c.HTML(http.StatusNotFound, "error", gin.H{"error": "Услуга не найдена"})
+		c.JSON(http.StatusNotFound, gin.H{"error": "Услуга не найдена"})
 		return
 	}
 
-	c.HTML(http.StatusOK, "service_detail", gin.H{
-		"Title":   "Детали услуги",
-		"Service": service,
-	})
+	c.JSON(http.StatusOK, service)
 }
 
-// New отображает форму создания новой услуги
-func (sc *ServiceController) New(c *gin.Context) {
-	c.HTML(http.StatusOK, "service/service_new", gin.H{
-		"Title": "Создание новой услуги",
-	})
-}
-
+// Create создаёт новую услугу
 func (sc *ServiceController) Create(c *gin.Context) {
 	var service models.Service
-	if err := c.ShouldBind(&service); err != nil {
+	if err := c.ShouldBindJSON(&service); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Ошибка в форме"})
 		return
 	}
 
-	if err := sc.service.Create(&service); err != nil {
-		c.HTML(http.StatusInternalServerError, "error", gin.H{"error": "Не удалось создать услугу"})
-		return
-	}
-
-	c.JSON(http.StatusOK, gin.H{"success": "Услуга успешно создана"})
-}
-
-// Edit отображает форму редактирования услуги
-func (sc *ServiceController) Edit(c *gin.Context) {
-	id, err := strconv.Atoi(c.Param("id"))
+	evt, err := sc.service.Create(c.Request.Context(), &service)
 	if err != nil {
-		c.HTML(http.StatusBadRequest, "error", gin.H{"error": "Некорректный ID"})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Не удалось создать услугу"})
 		return
 	}
 
-	service, err := sc.service.GetByID(id)
-	if err != nil || service == nil {
-		c.HTML(http.StatusNotFound, "error", gin.H{"error": "Услуга не найдена"})
-		return
+	evt.ActorID = c.GetString("user_id")
+	evt.CorrelationID = c.GetHeader("X-Request-ID")
+	evt.IP = c.ClientIP()
+	evt.UserAgent = c.Request.UserAgent()
+
+	if err := sc.auditLogger.Log(c.Request.Context(), *evt); err != nil {
+		log.Printf("failed to write audit log: %v", err)
 	}
 
-	c.HTML(http.StatusOK, "service/service_edit", gin.H{
-		"Title":   "Редактирование услуги",
-		"Service": service,
-	})
+	c.JSON(http.StatusCreated, gin.H{"success": "Услуга успешно создана", "service": service})
 }
 
+// Update обновляет существующую услугу
 func (sc *ServiceController) Update(c *gin.Context) {
 	id, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
@@ -113,24 +99,48 @@ func (sc *ServiceController) Update(c *gin.Context) {
 
 	updatedService.ID = service.ID
 
-	if err := sc.service.Update(&updatedService); err != nil {
+	evt, err := sc.service.Update(c.Request.Context(), &updatedService)
+	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Ошибка при обновлении услуги"})
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"success": "Услуга успешно обновлена"})
+	evt.ActorID = c.GetString("user_id")
+	evt.CorrelationID = c.GetHeader("X-Request-ID")
+	evt.IP = c.ClientIP()
+	evt.UserAgent = c.Request.UserAgent()
+
+	if err := sc.auditLogger.Log(c.Request.Context(), *evt); err != nil {
+		log.Printf("failed to write audit log: %v", err)
+	}
+
+	c.JSON(http.StatusOK, gin.H{"success": "Услуга успешно обновлена", "service": updatedService})
 }
 
+// Delete удаляет услугу
 func (sc *ServiceController) Delete(c *gin.Context) {
 	id, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
-		c.HTML(http.StatusBadRequest, "error", gin.H{"error": "Некорректный ID"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Некорректный ID"})
 		return
 	}
 
-	if err := sc.service.Delete(id); err != nil {
-		c.HTML(http.StatusInternalServerError, "error", gin.H{"error": "Ошибка при удалении услуги"})
+	evt, err := sc.service.Delete(c.Request.Context(), id)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Ошибка при удалении услуги"})
 		return
+	}
+
+	if evt == nil {
+		evt = &audit.Event{}
+	}
+	evt.ActorID = c.GetString("user_id")
+	evt.CorrelationID = c.GetHeader("X-Request-ID")
+	evt.IP = c.ClientIP()
+	evt.UserAgent = c.Request.UserAgent()
+
+	if err := sc.auditLogger.Log(c.Request.Context(), *evt); err != nil {
+		log.Printf("failed to write audit log: %v", err)
 	}
 
 	c.JSON(http.StatusOK, gin.H{"success": "Услуга успешно удалена"})

@@ -8,7 +8,7 @@ import (
 )
 
 type Logger interface {
-	Log(ctx context.Context, evt Event)
+	Log(ctx context.Context, evt Event) error
 }
 
 type kafkaLogger struct {

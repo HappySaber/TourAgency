@@ -1,8 +1,11 @@
 package services
 
 import (
+	"TurAgency/internal/audit"
 	"TurAgency/internal/models"
+	"context"
 	"errors"
+	"time"
 
 	"github.com/google/uuid"
 	"gorm.io/gorm"
@@ -16,30 +19,76 @@ func NewPositionService(db *gorm.DB) *PositionService {
 	return &PositionService{db: db}
 }
 
-func (cs *PositionService) Create(position *models.Position) error {
+func (ps *PositionService) Create(ctx context.Context, position *models.Position) (*audit.Event, error) {
 	position.ID = uuid.New()
-	return cs.db.Create(position).Error
+	if err := ps.db.WithContext(ctx).Create(position).Error; err != nil {
+		return nil, err
+	}
+
+	evt := &audit.Event{
+		Event:    "position.created",
+		Entity:   "position",
+		EntityID: position.ID.String(),
+		At:       time.Now(),
+		Before:   audit.MustMarshal(nil),
+		After:    audit.MustMarshal(position),
+	}
+	return evt, nil
+
 }
 
-func (cs *PositionService) GetAll() ([]models.Position, error) {
+func (ps *PositionService) GetAll() ([]models.Position, error) {
 	var Position []models.Position
-	err := cs.db.Find(&Position).Error
+	err := ps.db.Find(&Position).Error
 	return Position, err
 }
 
-func (cs *PositionService) GetByID(id string) (*models.Position, error) {
+func (ps *PositionService) GetByID(id string) (*models.Position, error) {
 	var Position models.Position
-	err := cs.db.First(&Position, "id = ?", id).Error
+	err := ps.db.First(&Position, "id = ?", id).Error
 	if errors.Is(err, gorm.ErrRecordNotFound) {
 		return nil, nil
 	}
 	return &Position, err
 }
 
-func (cs *PositionService) Update(updated *models.Position) error {
-	return cs.db.Save(updated).Error
+func (ps *PositionService) Update(ctx context.Context, updated *models.Position) (*audit.Event, error) {
+	var before models.Position
+	if err := ps.db.WithContext(ctx).First(&before, "id = ?", updated.ID).Error; err != nil {
+		return nil, err
+	}
+
+	if err := ps.db.WithContext(ctx).Save(updated).Error; err != nil {
+		return nil, err
+	}
+	evt := &audit.Event{
+		Event:    "position.updated",
+		Entity:   "position",
+		EntityID: updated.ID.String(),
+		At:       time.Now(),
+		Before:   audit.MustMarshal(&before),
+		After:    audit.MustMarshal(updated),
+	}
+	return evt, nil
 }
 
-func (cs *PositionService) Delete(id string) error {
-	return cs.db.Delete(&models.Position{}, "id = ?", id).Error
+func (ps *PositionService) Delete(ctx context.Context, id string) (*audit.Event, error) {
+	var before models.Employee
+	if err := ps.db.WithContext(ctx).First(&before, "id = ?", id).Error; err != nil {
+		return nil, err
+	}
+
+	if err := ps.db.WithContext(ctx).Delete(&models.Position{}, "id = ?", id).Error; err != nil {
+		return nil, err
+	}
+
+	evt := &audit.Event{
+		Event:    "position.deleted",
+		Entity:   "position",
+		EntityID: id,
+		At:       time.Now(),
+		Before:   audit.MustMarshal(&before),
+		After:    audit.MustMarshal(nil),
+	}
+	return evt, nil
 }

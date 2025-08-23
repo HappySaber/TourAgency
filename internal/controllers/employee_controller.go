@@ -1,104 +1,94 @@
 package controllers
 
 import (
+	"TurAgency/internal/audit"
 	"TurAgency/internal/services"
+	"log"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
 )
 
 type EmployeeController struct {
-	service *services.EmployeeService
+	service     *services.EmployeeService
+	auditLogger audit.Logger
 }
 
-func NewEmployeeController(service *services.EmployeeService) *EmployeeController {
-	return &EmployeeController{service}
+func NewEmployeeController(service *services.EmployeeService, al audit.Logger) *EmployeeController {
+	return &EmployeeController{
+		service:     service,
+		auditLogger: al,
+	}
 }
 
-// List отображает список поставщиков в HTML
-func (pc *EmployeeController) List(c *gin.Context) {
-	employees, err := pc.service.GetAll()
+// GET /employees
+func (ec *EmployeeController) List(c *gin.Context) {
+	employees, err := ec.service.GetAll()
 	if err != nil {
-		c.Set("Error", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Ошибка загрузки сотрудников"})
 		return
 	}
-	positions, err := pc.service.GetPositions()
+
+	positions, err := ec.service.GetPositions()
 	if err != nil {
-		c.Set("Error", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Ошибка загрузки позиций"})
 		return
 	}
-	c.HTML(http.StatusOK, "auth/employee", gin.H{
-		"Title":     "Список сотрудников",
-		"Employees": employees,
-		"Positions": positions,
+
+	c.JSON(http.StatusOK, gin.H{
+		"employees": employees,
+		"positions": positions,
 	})
 }
 
-func (pc *EmployeeController) GetAll(c *gin.Context) {
-	employees, err := pc.service.GetAll()
-	if err != nil {
-		c.HTML(http.StatusInternalServerError, "error", gin.H{"error": "Ошибка загрузки поставщиков"})
-		return
-	}
-
-	c.HTML(http.StatusOK, "employee", gin.H{
-		"Title":     "Список сотрудников",
-		"Employees": employees,
-	})
-}
-
-func (pc *EmployeeController) GetByID(c *gin.Context) {
+// GET /employees/:id
+func (ec *EmployeeController) GetByID(c *gin.Context) {
 	id := c.Param("id")
-	employee, err := pc.service.GetByID(id)
-	if err != nil || employee == nil {
-		c.HTML(http.StatusNotFound, "error", gin.H{"error": "Сотрудник не найден"})
+	employee, err := ec.service.GetByID(id)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Ошибка при поиске сотрудника"})
+		return
+	}
+	if employee == nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Сотрудник не найден"})
 		return
 	}
 
-	c.HTML(http.StatusOK, "employee_detail", gin.H{
-		"Title":    "Детали поставщика",
-		"Employee": employee,
-	})
+	c.JSON(http.StatusOK, employee)
 }
 
-// Edit отображает форму редактирования поставщика
-func (pc *EmployeeController) Edit(c *gin.Context) {
+// PUT /employees/:id
+func (ec *EmployeeController) Update(c *gin.Context) {
 	id := c.Param("id")
-	employee, err := pc.service.GetByID(id)
+	employee, err := ec.service.GetByID(id)
 	if err != nil {
-		c.Set("Error", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Ошибка при поиске сотрудника"})
 		return
 	}
-	positions, err := pc.service.GetPositions()
+	if employee == nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Сотрудник не найден"})
+		return
+	}
+
+	if err := c.ShouldBindJSON(employee); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Неверные данные"})
+		return
+	}
+
+	evt, err := ec.service.Update(c.Request.Context(), employee)
 	if err != nil {
-		c.Set("Error", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Ошибка при обновлении сотрудника"})
 		return
 	}
 
-	c.HTML(http.StatusOK, "auth/employee_edit", gin.H{
-		"Title":     "Редактирование поставщика",
-		"Employee":  employee,
-		"Positions": positions,
-	})
-}
+	evt.ActorID = c.GetString("user_id")
+	evt.CorrelationID = c.GetHeader("X-Request-ID")
+	evt.IP = c.ClientIP()
+	evt.UserAgent = c.Request.UserAgent()
 
-func (pc *EmployeeController) Update(c *gin.Context) {
-	id := c.Param("id")
-	employee, err := pc.service.GetByID(id)
-	if err != nil || employee == nil {
-		c.HTML(http.StatusNotFound, "error", gin.H{"error": "Поставщик не найден"})
-		return
+	if err := ec.auditLogger.Log(c.Request.Context(), *evt); err != nil {
+		log.Printf("failed to write audit log: %v", err)
 	}
 
-	if err := c.ShouldBind(employee); err != nil {
-		c.HTML(http.StatusBadRequest, "error", gin.H{"error": "Ошибка формы"})
-		return
-	}
-
-	if err := pc.service.Update(employee); err != nil {
-		c.HTML(http.StatusInternalServerError, "error", gin.H{"error": "Ошибка при обновлении поставщика"})
-		return
-	}
-
-	c.JSON(http.StatusOK, gin.H{"success": "Employee updated successfully"})
+	c.JSON(http.StatusOK, gin.H{"success": "Сотрудник обновлён"})
 }

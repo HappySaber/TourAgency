@@ -1,8 +1,11 @@
 package services
 
 import (
+	"TurAgency/internal/audit"
 	"TurAgency/internal/models"
+	"context"
 	"errors"
+	"time"
 
 	"gorm.io/gorm"
 )
@@ -30,8 +33,24 @@ func (es *EmployeeService) GetByID(id string) (*models.Employee, error) {
 	return &Employee, err
 }
 
-func (es *EmployeeService) Update(updated *models.Employee) error {
-	return es.db.Save(updated).Error
+func (es *EmployeeService) Update(ctx context.Context, updated *models.Employee) (*audit.Event, error) {
+	var before models.Employee
+	if err := es.db.WithContext(ctx).First(&before, "id = ?", updated.ID).Error; err != nil {
+		return nil, err
+	}
+
+	if err := es.db.WithContext(ctx).Save(updated).Error; err != nil {
+		return nil, err
+	}
+	evt := &audit.Event{
+		Event:    "employee.updated",
+		Entity:   "employee",
+		EntityID: updated.ID.String(),
+		At:       time.Now(),
+		Before:   audit.MustMarshal(&before),
+		After:    audit.MustMarshal(updated),
+	}
+	return evt, nil
 }
 
 func (as *EmployeeService) GetPositions() ([]models.Position, error) {

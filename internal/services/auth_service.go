@@ -97,6 +97,48 @@ func (as *AuthService) Signup(user *models.Employee) error {
 	return nil
 }
 
+func (as *AuthService) DummyLoginService(user models.Employee) (string, error) {
+	// Проверяем роль
+	flag := false
+
+	pos, err := as.GetPositions()
+
+	if err != nil {
+		return "", err
+	}
+
+	for i := range pos {
+		if pos[i] == user.Position {
+			flag = true
+		}
+	}
+
+	if !flag {
+		return "", errors.New("wrong role")
+	}
+
+	// Время жизни токена
+	expirationTime := time.Now().Add(30 * time.Minute)
+
+	// Claims
+	claims := &models.Claims{
+		Role: user.Position.Name,
+		RegisteredClaims: jwt.RegisteredClaims{
+			Subject:   "dummyLogin",
+			ExpiresAt: &jwt.NumericDate{Time: expirationTime},
+		},
+	}
+
+	// Генерация токена
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+	tokenString, err := token.SignedString(as.jwtKey)
+	if err != nil {
+		return "", err
+	}
+
+	return tokenString, nil
+}
+
 func (as *AuthService) GetPositions() ([]models.Position, error) {
 	var positions []models.Position
 	if err := as.db.Find(&positions).Error; err != nil {

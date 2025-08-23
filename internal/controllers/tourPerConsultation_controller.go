@@ -9,6 +9,15 @@ import (
 	"github.com/google/uuid"
 )
 
+type TourWithCheck struct {
+	ID       uuid.UUID `json:"id"`
+	Name     string    `json:"name"`
+	Country  string    `json:"country"`
+	Discount string    `json:"discount"`
+	Quantity string    `json:"quantity"`
+	Checked  bool      `json:"checked"`
+}
+
 type TourPerConsultationController struct {
 	service  *services.TourPerConsultationService
 	allTours *services.TourService
@@ -18,25 +27,26 @@ func NewTourPerConsultationController(svc *services.TourPerConsultationService, 
 	return &TourPerConsultationController{svc, allTours}
 }
 
-type TourWithCheck struct {
-	ID       uuid.UUID
-	Name     string
-	Country  string
-	Discount string
-	Quantity string
-	Checked  bool
-}
-
-func (c *TourPerConsultationController) EditPage(ctx *gin.Context) {
+// GetForConsultation возвращает все туры с отметкой выбора для консультации
+func (c *TourPerConsultationController) GetForConsultation(ctx *gin.Context) {
 	idStr := ctx.Param("id")
-	id, err := uuid.Parse(idStr)
+	consultationID, err := uuid.Parse(idStr)
 	if err != nil {
-		ctx.HTML(http.StatusBadRequest, "error", gin.H{"error": "Неверный ID консультации"})
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": "Неверный ID консультации"})
 		return
 	}
 
-	current, _ := c.service.GetByConsultationID(id)
-	all, _ := c.allTours.GetAll()
+	current, err := c.service.GetByConsultationID(consultationID)
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "Ошибка при получении туров"})
+		return
+	}
+
+	all, err := c.allTours.GetAll()
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "Ошибка при получении всех туров"})
+		return
+	}
 
 	currentMap := make(map[uuid.UUID]models.TourPerConsultation)
 	for _, t := range current {
@@ -56,11 +66,13 @@ func (c *TourPerConsultationController) EditPage(ctx *gin.Context) {
 		})
 	}
 
-	ctx.HTML(http.StatusOK, "consultation/consultation_tours_add", gin.H{
-		"ConsultationID": id,
-		"Tours":          toursWithCheck,
+	ctx.JSON(http.StatusOK, gin.H{
+		"consultation_id": consultationID,
+		"tours":           toursWithCheck,
 	})
 }
+
+// Update обновляет туры для консультации через JSON
 func (c *TourPerConsultationController) Update(ctx *gin.Context) {
 	idStr := ctx.Param("id")
 	consultationID, err := uuid.Parse(idStr)
@@ -69,29 +81,25 @@ func (c *TourPerConsultationController) Update(ctx *gin.Context) {
 		return
 	}
 
-	form := ctx.PostFormArray("tours")
 	var tours []models.TourPerConsultation
-
-	for _, s := range form {
-		tourID, err := uuid.Parse(s)
-		if err != nil {
-			continue
-		}
-		discount := ctx.PostForm("discount_" + s)
-		quantity := ctx.PostForm("quantity_" + s)
-
-		tours = append(tours, models.TourPerConsultation{
-			TourID:         tourID,
-			ConsultationID: consultationID,
-			Discount:       discount,
-			Quantity:       quantity,
-		})
+	if err := ctx.ShouldBindJSON(&tours); err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": "Некорректные данные", "details": err.Error()})
+		return
 	}
 
-	if err := c.service.UpdateToursWithData(consultationID, tours); err != nil {
+	// Принудительно присваиваем consultationID для безопасности
+	for i := range tours {
+		tours[i].ConsultationID = consultationID
+	}
+
+	events, err := c.service.UpdateToursWithData(ctx.Request.Context(), consultationID, tours)
+	if err != nil {
 		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "Ошибка при обновлении туров"})
 		return
 	}
 
-	ctx.Redirect(http.StatusSeeOther, "/consultation")
+	ctx.JSON(http.StatusOK, gin.H{
+		"success": "Туры для консультации обновлены",
+		"events":  events, // можно убрать, если не нужен клиенту
+	})
 }

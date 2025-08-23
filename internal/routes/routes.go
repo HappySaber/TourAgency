@@ -1,7 +1,9 @@
 package routes
 
 import (
+	"TurAgency/internal/audit"
 	"TurAgency/internal/controllers"
+	"TurAgency/internal/kafka"
 	"TurAgency/internal/services"
 	"path/filepath"
 	"time"
@@ -11,7 +13,7 @@ import (
 	"gorm.io/gorm"
 )
 
-func TourAgencyRoutes(r *gin.Engine, db *gorm.DB) {
+func TourAgencyRoutes(r *gin.Engine, db *gorm.DB, producer *kafka.KafkaProducer) {
 	// CORS для React dev-сервера
 	r.Use(cors.New(cors.Config{
 		AllowOrigins:     []string{"http://localhost:5173"}, // Vite порт по умолчанию
@@ -22,29 +24,31 @@ func TourAgencyRoutes(r *gin.Engine, db *gorm.DB) {
 		MaxAge:           12 * time.Hour,
 	}))
 
+	auditLogger := audit.NewKafkaLogger(producer)
+
 	authService := services.NewAuthService(db)
 	authController := controllers.NewAuthController(authService)
 
 	tourService := services.NewTourService(db)
-	tourController := controllers.NewTourController(tourService)
+	tourController := controllers.NewTourController(tourService, auditLogger)
 
 	providerService := services.NewProviderService(db)
-	providerController := controllers.NewProviderController(providerService)
+	providerController := controllers.NewProviderController(providerService, auditLogger)
 
 	consulatationService := services.NewConsultationService(db)
-	consulatationController := controllers.NewConsultationController(consulatationService)
+	consulatationController := controllers.NewConsultationController(consulatationService, auditLogger)
 
 	clientService := services.NewClientService(db)
-	clientController := controllers.NewClientController(clientService)
+	clientController := controllers.NewClientController(clientService, auditLogger)
 
 	serviceService := services.NewServService(db)
-	serviceController := controllers.NewServiceController(serviceService)
+	serviceController := controllers.NewServiceController(serviceService, auditLogger)
 
 	positionService := services.NewPositionService(db)
-	positionController := controllers.NewPositionController(positionService)
+	positionController := controllers.NewPositionController(positionService, auditLogger)
 
 	employeeService := services.NewEmployeeService(db)
-	employeeController := controllers.NewEmployeeController(employeeService)
+	employeeController := controllers.NewEmployeeController(employeeService, auditLogger)
 
 	servicePerConsultationService := services.NewServicePerConsultationService(db)
 	tourPerConsultationService := services.NewTourPerConsultationService(db)

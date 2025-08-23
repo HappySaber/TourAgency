@@ -1,72 +1,49 @@
 package controllers
 
 import (
+	"TurAgency/internal/audit"
 	"TurAgency/internal/models"
 	"TurAgency/internal/services"
+	"log"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
 )
 
 type TourController struct {
-	service *services.TourService
+	service     *services.TourService
+	auditLogger audit.Logger
 }
 
-func NewTourController(service *services.TourService) *TourController {
-	return &TourController{service}
+func NewTourController(service *services.TourService, al audit.Logger) *TourController {
+	return &TourController{
+		service:     service,
+		auditLogger: al,
+	}
 }
 
-// List отображает список туров
+// List возвращает все туры
 func (tc *TourController) List(c *gin.Context) {
-	tours, err := tc.service.GetAll()
-	if err != nil {
-		c.Set("Error", err)
-		return
-	}
-	c.HTML(http.StatusOK, "tours/tours", gin.H{
-		"Title": "Туры",
-		"Tours": tours,
-	})
-}
-
-func (tc *TourController) GetByID(c *gin.Context) {
-	id := c.Param("id")
-
-	tour, err := tc.service.GetByID(id)
-	if err != nil || tour == nil {
-		c.HTML(http.StatusNotFound, "error", gin.H{"error": "Тур не найден"})
-		return
-	}
-
-	c.HTML(http.StatusOK, "tour_detail", gin.H{
-		"Title":   "Детали тура",
-		"Service": tour,
-	})
-}
-
-func (tc *TourController) GetAll(c *gin.Context) {
 	tours, err := tc.service.GetAll()
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Ошибка при получении туров"})
 		return
 	}
-
 	c.JSON(http.StatusOK, tours)
 }
 
-// New отображает форму создания нового тура
-func (tc *TourController) New(c *gin.Context) {
-	providers, err := tc.service.GetProviders() // Получаем провайдеров для формы
-	if err != nil {
-		c.Set("Error", err)
+// GetByID возвращает тур по ID
+func (tc *TourController) GetByID(c *gin.Context) {
+	id := c.Param("id")
+	tour, err := tc.service.GetByID(id)
+	if err != nil || tour == nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Тур не найден"})
 		return
 	}
-	c.HTML(http.StatusOK, "tours/tour_new", gin.H{
-		"Title":     "Создание нового тура",
-		"Providers": providers,
-	})
+	c.JSON(http.StatusOK, tour)
 }
 
+// Create создаёт новый тур
 func (tc *TourController) Create(c *gin.Context) {
 	var tour models.Tour
 	if err := c.ShouldBindJSON(&tour); err != nil {
@@ -74,67 +51,64 @@ func (tc *TourController) Create(c *gin.Context) {
 		return
 	}
 
-	if err := tc.service.Create(&tour); err != nil {
+	evt, err := tc.service.Create(c.Request.Context(), &tour)
+	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Ошибка при создании тура"})
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"success": "Тур успешно создан"})
+	evt.ActorID = c.GetString("user_id")
+	evt.CorrelationID = c.GetHeader("X-Request-ID")
+	evt.IP = c.ClientIP()
+	evt.UserAgent = c.Request.UserAgent()
+
+	if err := tc.auditLogger.Log(c.Request.Context(), *evt); err != nil {
+		log.Printf("failed to write audit log: %v", err)
+	}
+
+	c.JSON(http.StatusCreated, gin.H{"success": "Тур успешно создан", "tour": tour})
 }
 
-// Edit отображает форму редактирования тура
-func (tc *TourController) Edit(c *gin.Context) {
-	id := c.Param("id")
-	tour, err := tc.service.GetByID(id)
-	if err != nil {
-		c.Set("Error", err)
-		return
-	}
-	providers, err := tc.service.GetProviders() // Получаем провайдеров для формы
-	if err != nil {
-		c.Set("Error", err)
-		return
-	}
-	c.HTML(http.StatusOK, "tours/tour_edit", gin.H{
-		"Title":     "Редактирование тура",
-		"Tour":      tour,
-		"Providers": providers,
-	})
-}
-
+// Update обновляет существующий тур
 func (tc *TourController) Update(c *gin.Context) {
 	id := c.Param("id")
-
-	// Получение существующего тура
 	tour, err := tc.service.GetByID(id)
 	if err != nil || tour == nil {
-		c.HTML(http.StatusNotFound, "error", gin.H{"error": "Тур не найден"})
+		c.JSON(http.StatusNotFound, gin.H{"error": "Тур не найден"})
 		return
 	}
 
-	// Привязка данных формы к новой переменной, не затирая существующую
 	var updatedTour models.Tour
-	if err := c.ShouldBind(&updatedTour); err != nil {
-		c.HTML(http.StatusBadRequest, "error", gin.H{"error": "Ошибка в форме"})
+	if err := c.ShouldBindJSON(&updatedTour); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Ошибка в форме", "details": err.Error()})
 		return
 	}
 
-	// Сохраняем ID из пути, т.к. он может не прийти в форме
 	updatedTour.ID = tour.ID
 
-	// Выполнение обновления
-	if err := tc.service.Update(&updatedTour); err != nil {
-		c.HTML(http.StatusInternalServerError, "error", gin.H{"error": "Ошибка при обновлении тура"})
+	evt, err := tc.service.Update(c.Request.Context(), &updatedTour)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Ошибка при обновлении тура"})
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"success": "Tour created successfully"})
+	evt.ActorID = c.GetString("user_id")
+	evt.CorrelationID = c.GetHeader("X-Request-ID")
+	evt.IP = c.ClientIP()
+	evt.UserAgent = c.Request.UserAgent()
+
+	if err := tc.auditLogger.Log(c.Request.Context(), *evt); err != nil {
+		log.Printf("failed to write audit log: %v", err)
+	}
+
+	c.JSON(http.StatusOK, gin.H{"success": "Тур успешно обновлён", "tour": updatedTour})
 }
 
+// Delete удаляет тур
 func (tc *TourController) Delete(c *gin.Context) {
 	id := c.Param("id")
-
-	if err := tc.service.Delete(id); err != nil {
+	evt, err := tc.service.Delete(c.Request.Context(), id)
+	if err != nil {
 		if err.Error() == "not found" {
 			c.JSON(http.StatusNotFound, gin.H{"error": "Тур не найден"})
 		} else {
@@ -143,5 +117,17 @@ func (tc *TourController) Delete(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"success": "Tour deleted successfully"})
+	if evt == nil {
+		evt = &audit.Event{}
+	}
+	evt.ActorID = c.GetString("user_id")
+	evt.CorrelationID = c.GetHeader("X-Request-ID")
+	evt.IP = c.ClientIP()
+	evt.UserAgent = c.Request.UserAgent()
+
+	if err := tc.auditLogger.Log(c.Request.Context(), *evt); err != nil {
+		log.Printf("failed to write audit log: %v", err)
+	}
+
+	c.JSON(http.StatusOK, gin.H{"success": "Тур успешно удалён"})
 }

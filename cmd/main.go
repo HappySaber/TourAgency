@@ -37,9 +37,12 @@ func main() {
 		// Здесь можно вызвать audit/handler или сервисы
 	})
 
+	producer := kafka.NewKafkaProducer([]string{os.Getenv("KAFKA_BROKER")},
+		os.Getenv("KAFKA_TOPIC"))
+
 	port := "8080"
 	router := gin.New()
-	routes.TourAgencyRoutes(router, db)
+	routes.TourAgencyRoutes(router, db, producer)
 
 	router.Run(":" + port)
 }

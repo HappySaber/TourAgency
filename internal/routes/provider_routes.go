@@ -11,9 +11,7 @@ func initProviderRoutes(r *gin.RouterGroup, providerCtrl *controllers.ProviderCo
 	providers := r.Group("/provider").Use(midlleware.IsAuthorized())
 	{
 		providers.GET("/", providerCtrl.List)
-		providers.GET("/new", providerCtrl.New)
 		providers.POST("/new", providerCtrl.Create)
-		providers.GET("/edit/:id", providerCtrl.Edit)
 		providers.PUT("/edit/:id", providerCtrl.Update)
 		providers.DELETE("/:id", providerCtrl.Delete)
 	}
