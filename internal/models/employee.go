@@ -30,6 +30,12 @@ type EmployeeRequest struct {
 }
 
 type Claims struct {
-	Role string `json:"Role"`
+	UserID uuid.UUID `json:"userID"`
+	Role   string    `json:"role"`
 	jwt.RegisteredClaims
+}
+
+type TokenPair struct {
+	AccessToken  string `json:"access_token"`
+	RefreshToken string `json:"refresh_token"`
 }

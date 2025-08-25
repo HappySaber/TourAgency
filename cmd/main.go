@@ -23,7 +23,9 @@ func main() {
 	}
 	// Создание сервиса и контроллера
 	// Создаем экземпляр DBConfig
+
 	db := database.Init()
+	database.InitRedisBD()
 
 	kafkaConsumer := kafka.NewKafkaConsumer(
 		[]string{os.Getenv("KAFKA_BROKER")},

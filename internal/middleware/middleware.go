@@ -1,7 +1,9 @@
 package midlleware
 
 import (
+	"TurAgency/internal/database"
 	"TurAgency/internal/utils"
+	"context"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -10,9 +12,7 @@ import (
 func IsAuthorized() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		cookie, err := c.Cookie("token")
-
 		if err != nil {
-			// Безопасно прерываем обработку, не отправляя других данных
 			c.Redirect(http.StatusSeeOther, "/login")
 			c.Abort()
 			return
@@ -20,12 +20,23 @@ func IsAuthorized() gin.HandlerFunc {
 
 		claims, err := utils.ParseToken(cookie)
 		if err != nil {
-			// Тоже просто редиректим, не отправляя JSON — иначе возникнет конфликт
 			c.Redirect(http.StatusSeeOther, "/login")
 			c.Abort()
 			return
 		}
+
+		// проверка в Redis
+		_, err = database.RedisDB.Get(context.Background(), cookie).Result()
+		if err != nil {
+			c.Redirect(http.StatusSeeOther, "/login")
+			c.Abort()
+			return
+		}
+
+		// кладём в контекст
 		c.Set("role", claims.Role)
+		c.Set("userID", claims.UserID)
+
 		c.Next()
 	}
 }

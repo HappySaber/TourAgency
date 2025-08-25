@@ -1,9 +1,11 @@
 package services
 
 import (
+	"TurAgency/internal/database"
 	"TurAgency/internal/models"
 	"TurAgency/internal/utils"
 	"errors"
+	"fmt"
 	"os"
 	"time"
 
@@ -25,44 +27,70 @@ func NewAuthService(db *gorm.DB) *AuthService {
 	}
 }
 
-func (as *AuthService) Login(userReq models.EmployeeRequest) (string, error) {
+func (as *AuthService) Login(userReq models.EmployeeRequest) (*models.TokenPair, error) {
 
 	var user models.Employee
 
 	// Поиск пользователя по email
 	if err := as.db.Where("email = ?", userReq.Email).First(&user).Error; err != nil {
-		return "", errors.New("Неверный email или пароль")
+		return nil, errors.New("Неверный email или пароль")
 	}
 
 	// Проверка пароля
 	if !utils.CompareHashPassword(userReq.Password, user.Password) {
-		return "", errors.New("Неверный email или пароль")
+		return nil, errors.New("Неверный email или пароль")
 	}
 
 	// Получение роли
 	var position models.Position
 	if err := as.db.First(&position, "id = ?", user.PositionID).Error; err != nil {
-		return "", errors.New("Не удалось получить должность пользователя")
+		return nil, errors.New("Не удалось получить должность пользователя")
 	}
 
-	// Создание JWT-токена
-	expirationTime := time.Now().Add(8 * time.Hour)
-	claims := &models.Claims{
+	accessExp := time.Now().Add(30 * time.Minute)
+	accessClaims := &models.Claims{
 		Role: position.Name,
 		RegisteredClaims: jwt.RegisteredClaims{
 			Subject:   user.ID.String(),
-			ExpiresAt: jwt.NewNumericDate(expirationTime),
+			ExpiresAt: jwt.NewNumericDate(accessExp),
 		},
 	}
-
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-
-	tokenString, err := token.SignedString(as.jwtKey)
+	accessToken := jwt.NewWithClaims(jwt.SigningMethodHS256, accessClaims)
+	accessTokenStr, err := accessToken.SignedString(as.jwtKey)
 	if err != nil {
-		return "", errors.New("Не удалось создать токен")
+		return nil, errors.New("Не удалось создать access токен")
 	}
 
-	return tokenString, nil
+	// Refresh token (живет дольше, напр. 7 дней)
+	refreshExp := time.Now().Add(7 * 24 * time.Hour)
+	refreshClaims := &models.Claims{
+		Role: position.Name,
+		RegisteredClaims: jwt.RegisteredClaims{
+			Subject:   user.ID.String(),
+			ExpiresAt: jwt.NewNumericDate(refreshExp),
+		},
+	}
+	refreshToken := jwt.NewWithClaims(jwt.SigningMethodHS256, refreshClaims)
+	refreshTokenStr, err := refreshToken.SignedString(as.jwtKey)
+	if err != nil {
+		return nil, errors.New("Не удалось создать refresh токен")
+	}
+
+	// Сохраняем refresh в Redis
+	err = database.RedisDB.Set(
+		database.Ctx,
+		refreshTokenStr,
+		"valid",
+		time.Until(refreshExp),
+	).Err()
+	if err != nil {
+		return nil, fmt.Errorf("Ошибка сохранения refresh токена в Redis: %w", err)
+	}
+
+	return &models.TokenPair{
+		AccessToken:  accessTokenStr,
+		RefreshToken: refreshTokenStr,
+	}, nil
 }
 
 func (as *AuthService) Signup(user *models.Employee) error {
@@ -96,47 +124,8 @@ func (as *AuthService) Signup(user *models.Employee) error {
 
 	return nil
 }
-
-func (as *AuthService) DummyLoginService(user models.Employee) (string, error) {
-	// Проверяем роль
-	flag := false
-
-	pos, err := as.GetPositions()
-
-	if err != nil {
-		return "", err
-	}
-
-	for i := range pos {
-		if pos[i] == user.Position {
-			flag = true
-		}
-	}
-
-	if !flag {
-		return "", errors.New("wrong role")
-	}
-
-	// Время жизни токена
-	expirationTime := time.Now().Add(30 * time.Minute)
-
-	// Claims
-	claims := &models.Claims{
-		Role: user.Position.Name,
-		RegisteredClaims: jwt.RegisteredClaims{
-			Subject:   "dummyLogin",
-			ExpiresAt: &jwt.NumericDate{Time: expirationTime},
-		},
-	}
-
-	// Генерация токена
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-	tokenString, err := token.SignedString(as.jwtKey)
-	if err != nil {
-		return "", err
-	}
-
-	return tokenString, nil
+func (as *AuthService) Logout(tokenString string) error {
+	return database.RedisDB.Del(database.Ctx, tokenString).Err()
 }
 
 func (as *AuthService) GetPositions() ([]models.Position, error) {
@@ -145,4 +134,65 @@ func (as *AuthService) GetPositions() ([]models.Position, error) {
 		return nil, err
 	}
 	return positions, nil
+}
+
+func (as *AuthService) ValidateToken(tokenString string) (*models.Claims, error) {
+	val, err := database.RedisDB.Get(database.Ctx, tokenString).Result()
+	if err != nil || val != "valid" {
+		return nil, errors.New("токен не найден или отозван")
+	}
+
+	claims := &models.Claims{}
+	token, err := jwt.ParseWithClaims(tokenString, claims, func(t *jwt.Token) (interface{}, error) {
+		return as.jwtKey, nil
+	})
+
+	if err != nil || !token.Valid {
+		return nil, errors.New("невалидный токен")
+	}
+
+	return claims, nil
+}
+
+func (as *AuthService) GenerateTokens(user models.Employee) (*models.TokenPair, error) {
+	// Access Token
+	accessExp := time.Now().Add(30 * time.Minute)
+	accessClaims := &models.Claims{
+		UserID: user.ID,
+		Role:   user.Position.Name,
+		RegisteredClaims: jwt.RegisteredClaims{
+			ExpiresAt: jwt.NewNumericDate(accessExp),
+			Subject:   user.ID.String(),
+		},
+	}
+	accessToken, err := jwt.NewWithClaims(jwt.SigningMethodHS256, accessClaims).SignedString(as.jwtKey)
+	if err != nil {
+		return nil, err
+	}
+
+	// Refresh Token
+	refreshExp := time.Now().Add(7 * 24 * time.Hour)
+	refreshClaims := &models.Claims{
+		UserID: user.ID,
+		Role:   user.Position.Name,
+		RegisteredClaims: jwt.RegisteredClaims{
+			ExpiresAt: jwt.NewNumericDate(refreshExp),
+			Subject:   user.ID.String(),
+		},
+	}
+	refreshToken, err := jwt.NewWithClaims(jwt.SigningMethodHS256, refreshClaims).SignedString(as.jwtKey)
+	if err != nil {
+		return nil, err
+	}
+
+	// Сохраняем refresh token в Redis
+	key := fmt.Sprintf("refresh:%s", user.ID.String())
+	if err := database.RedisDB.Set(database.Ctx, key, refreshToken, 7*24*time.Hour).Err(); err != nil {
+		return nil, fmt.Errorf("ошибка сохранения токена в Redis: %w", err)
+	}
+
+	return &models.TokenPair{
+		AccessToken:  accessToken,
+		RefreshToken: refreshToken,
+	}, nil
 }

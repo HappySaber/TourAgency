@@ -61,6 +61,21 @@ services:
     depends_on:
       - zookeeper
 
+  redis:
+    image: redis:7
+    container_name: redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redisdata:/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+
   app:
     build: .
     container_name: app
@@ -81,9 +96,12 @@ services:
         condition: service_completed_successfully
       kafka:
         condition: service_started
+      redis:
+        condition: service_healthy
     restart: unless-stopped
 
 volumes:
   pgdata:
   zkdata:
   kafkadata:
+  redisdata:
